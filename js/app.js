@@ -132,9 +132,19 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 6b. Settings Modal Listeners
+  // 6b. Settings Modal Listeners & Tabs
   const settingsBtn = document.getElementById('settingsBtn');
-  if (settingsBtn) settingsBtn.addEventListener('click', openSettingsModal);
+  if (settingsBtn) settingsBtn.addEventListener('click', () => openSettingsModal('preferences'));
+
+  const tabBtnPref = document.getElementById('settingsTabBtn-preferences');
+  const tabBtnCloud = document.getElementById('settingsTabBtn-cloud');
+  const tabBtnBackup = document.getElementById('settingsTabBtn-backup');
+  const tabBtnTags = document.getElementById('settingsTabBtn-tags');
+
+  if (tabBtnPref) tabBtnPref.addEventListener('click', () => switchSettingsTab('preferences'));
+  if (tabBtnCloud) tabBtnCloud.addEventListener('click', () => switchSettingsTab('cloud'));
+  if (tabBtnBackup) tabBtnBackup.addEventListener('click', () => switchSettingsTab('backup'));
+  if (tabBtnTags) tabBtnTags.addEventListener('click', () => switchSettingsTab('tags'));
 
   const closeSettingsModalBtn = document.getElementById('closeSettingsModalBtn');
   if (closeSettingsModalBtn) closeSettingsModalBtn.addEventListener('click', closeSettingsModal);
@@ -206,17 +216,89 @@ window.addEventListener('DOMContentLoaded', () => {
   if (uploadToSupabaseBtn) uploadToSupabaseBtn.addEventListener('click', uploadLocalDataToSupabase);
 
   // 8. Tasks Hub Listeners
-  document.getElementById('openTasksHubBtn').addEventListener('click', openTasksHubModal);
-  document.getElementById('openTasksHubFromBlockBtn').addEventListener('click', openTasksHubModal);
-  document.getElementById('closeTasksHubBtn').addEventListener('click', closeTasksHubModal);
-  document.getElementById('doneTasksHubBtn').addEventListener('click', closeTasksHubModal);
-  document.getElementById('tasksHubAddNewTaskBtn').addEventListener('click', addSharedTaskFromHub);
-  document.getElementById('tasksHubNewTaskTitle').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addSharedTaskFromHub();
-    }
-  });
+  const openTasksHubBtn = document.getElementById('openTasksHubBtn');
+  if (openTasksHubBtn) openTasksHubBtn.addEventListener('click', openTasksHubModal);
+
+  const openTasksHubFromBlockBtn = document.getElementById('openTasksHubFromBlockBtn');
+  if (openTasksHubFromBlockBtn) openTasksHubFromBlockBtn.addEventListener('click', openTasksHubModal);
+
+  const closeTasksHubBtn = document.getElementById('closeTasksHubBtn');
+  if (closeTasksHubBtn) closeTasksHubBtn.addEventListener('click', closeTasksHubModal);
+
+  const doneTasksHubBtn = document.getElementById('doneTasksHubBtn');
+  if (doneTasksHubBtn) doneTasksHubBtn.addEventListener('click', closeTasksHubModal);
+
+  const tasksHubAddNewTaskBtn = document.getElementById('tasksHubAddNewTaskBtn');
+  if (tasksHubAddNewTaskBtn) tasksHubAddNewTaskBtn.addEventListener('click', addSharedTaskFromHub);
+
+  const tasksHubNewTaskTitle = document.getElementById('tasksHubNewTaskTitle');
+  if (tasksHubNewTaskTitle) {
+    tasksHubNewTaskTitle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addSharedTaskFromHub();
+      }
+    });
+  }
+
+  // 8b. Time Insights Modal Listeners
+  const openInsightsBtn = document.getElementById('openInsightsBtn');
+  if (openInsightsBtn) openInsightsBtn.addEventListener('click', openInsightsModal);
+
+  const closeInsightsModalBtn = document.getElementById('closeInsightsModalBtn');
+  if (closeInsightsModalBtn) closeInsightsModalBtn.addEventListener('click', closeInsightsModal);
+
+  const doneInsightsModalBtn = document.getElementById('doneInsightsModalBtn');
+  if (doneInsightsModalBtn) doneInsightsModalBtn.addEventListener('click', closeInsightsModal);
+
+  const insightsModal = document.getElementById('insightsModal');
+  if (insightsModal) {
+    insightsModal.addEventListener('click', (e) => {
+      if (e.target.id === 'insightsModal') closeInsightsModal();
+    });
+  }
+
+  // 8c. Mobile Bottom Navigation Listeners
+  const mobileNavToday = document.getElementById('mobileNavToday');
+  const mobileNavWeek = document.getElementById('mobileNavWeek');
+  const mobileNavTasks = document.getElementById('mobileNavTasks');
+  const mobileNavInsights = document.getElementById('mobileNavInsights');
+
+  if (mobileNavToday) {
+    mobileNavToday.addEventListener('click', () => {
+      weekOffset = 0;
+      const currentTime = getCurrentTime();
+      selectedDayId = currentTime.todayIranDayId;
+      currentViewMode = 'daily-vertical';
+      SafeStorage.setItem(CONFIG.VIEW_KEY, 'daily-vertical');
+      syncViewButtonsUI();
+      renderDayTabs();
+      renderCurrentView();
+      scrollToCurrentBlock();
+    });
+  }
+
+  if (mobileNavWeek) {
+    mobileNavWeek.addEventListener('click', () => {
+      currentViewMode = 'weekly';
+      SafeStorage.setItem(CONFIG.VIEW_KEY, 'weekly');
+      syncViewButtonsUI();
+      renderDayTabs();
+      renderCurrentView();
+    });
+  }
+
+  if (mobileNavTasks) {
+    mobileNavTasks.addEventListener('click', () => {
+      openTasksHubModal();
+    });
+  }
+
+  if (mobileNavInsights) {
+    mobileNavInsights.addEventListener('click', () => {
+      openInsightsModal();
+    });
+  }
 
   // 9. Quick task addition in Block Modal
   document.getElementById('modalQuickAddTaskBtn').addEventListener('click', addQuickTaskFromBlock);
@@ -331,52 +413,83 @@ window.addEventListener('DOMContentLoaded', () => {
   const backupMenuBtn = document.getElementById('backupMenuBtn');
   const backupDropdown = document.getElementById('backupDropdown');
 
-  resetMenuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    resetDropdown.classList.toggle('hidden');
-    backupDropdown.classList.add('hidden');
-  });
+  if (resetMenuBtn && resetDropdown) {
+    resetMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetDropdown.classList.toggle('hidden');
+      if (backupDropdown) backupDropdown.classList.add('hidden');
+    });
+  }
 
-  backupMenuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    backupDropdown.classList.toggle('hidden');
-    resetDropdown.classList.add('hidden');
-  });
+  if (backupMenuBtn && backupDropdown) {
+    backupMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      backupDropdown.classList.toggle('hidden');
+      if (resetDropdown) resetDropdown.classList.add('hidden');
+    });
+  }
 
   document.addEventListener('click', () => {
-    resetDropdown.classList.add('hidden');
-    backupDropdown.classList.add('hidden');
+    if (resetDropdown) resetDropdown.classList.add('hidden');
+    if (backupDropdown) backupDropdown.classList.add('hidden');
   });
 
   // 15. Reset Operations
-  document.getElementById('triggerResetDayBtn').addEventListener('click', () => {
-    resetDropdown.classList.add('hidden');
-    promptResetDay();
-  });
-  document.getElementById('triggerResetWeekBtn').addEventListener('click', () => {
-    resetDropdown.classList.add('hidden');
-    promptResetWeek();
-  });
+  const triggerResetDayBtn = document.getElementById('triggerResetDayBtn');
+  if (triggerResetDayBtn) {
+    triggerResetDayBtn.addEventListener('click', () => {
+      if (resetDropdown) resetDropdown.classList.add('hidden');
+      promptResetDay();
+    });
+  }
 
-  document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirmDialog);
-  document.getElementById('confirmAcceptBtn').addEventListener('click', () => {
-    if (typeof pendingConfirmAction === 'function') {
-      pendingConfirmAction();
-    }
-    closeConfirmDialog();
-  });
+  const triggerResetWeekBtn = document.getElementById('triggerResetWeekBtn');
+  if (triggerResetWeekBtn) {
+    triggerResetWeekBtn.addEventListener('click', () => {
+      if (resetDropdown) resetDropdown.classList.add('hidden');
+      promptResetWeek();
+    });
+  }
+
+  const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+  if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', closeConfirmDialog);
+
+  const confirmAcceptBtn = document.getElementById('confirmAcceptBtn');
+  if (confirmAcceptBtn) {
+    confirmAcceptBtn.addEventListener('click', () => {
+      if (typeof pendingConfirmAction === 'function') {
+        pendingConfirmAction();
+      }
+      closeConfirmDialog();
+    });
+  }
 
   // 16. Backup Operations
-  document.getElementById('exportJsonBtn').addEventListener('click', exportToJson);
-  document.getElementById('copyJsonBtn').addEventListener('click', copyJsonToClipboard);
-  document.getElementById('importJsonInput').addEventListener('change', importFromJson);
-  document.getElementById('pasteJsonBtn').addEventListener('click', () => {
-    backupDropdown.classList.add('hidden');
-    openPasteBackupModal();
-  });
-  document.getElementById('closePasteBackupBtn').addEventListener('click', closePasteBackupModal);
-  document.getElementById('cancelPasteBackupBtn').addEventListener('click', closePasteBackupModal);
-  document.getElementById('applyPasteBackupBtn').addEventListener('click', applyPastedBackup);
+  const exportJsonBtn = document.getElementById('exportJsonBtn');
+  if (exportJsonBtn) exportJsonBtn.addEventListener('click', exportToJson);
+
+  const copyJsonBtn = document.getElementById('copyJsonBtn');
+  if (copyJsonBtn) copyJsonBtn.addEventListener('click', copyJsonToClipboard);
+
+  const importJsonInput = document.getElementById('importJsonInput');
+  if (importJsonInput) importJsonInput.addEventListener('change', importFromJson);
+
+  const pasteJsonBtn = document.getElementById('pasteJsonBtn');
+  if (pasteJsonBtn) {
+    pasteJsonBtn.addEventListener('click', () => {
+      if (backupDropdown) backupDropdown.classList.add('hidden');
+      openPasteBackupModal();
+    });
+  }
+
+  const closePasteBackupBtn = document.getElementById('closePasteBackupBtn');
+  if (closePasteBackupBtn) closePasteBackupBtn.addEventListener('click', closePasteBackupModal);
+
+  const cancelPasteBackupBtn = document.getElementById('cancelPasteBackupBtn');
+  if (cancelPasteBackupBtn) cancelPasteBackupBtn.addEventListener('click', closePasteBackupModal);
+
+  const applyPasteBackupBtn = document.getElementById('applyPasteBackupBtn');
+  if (applyPasteBackupBtn) applyPasteBackupBtn.addEventListener('click', applyPastedBackup);
 
   // 17. Jump to current active block
   document.getElementById('jumpCurrentBtn').addEventListener('click', scrollToCurrentBlock);
@@ -387,22 +500,42 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modalSaveBtn').addEventListener('click', saveBlockModalChanges);
 
   // 19. Tags Manager Modal listeners
-  document.getElementById('openTagsMgrBtn').addEventListener('click', openTagsModal);
-  document.getElementById('openTagsMgrFromModal').addEventListener('click', openTagsModal);
-  document.getElementById('closeTagsModalBtn').addEventListener('click', closeTagsModal);
-  document.getElementById('doneTagsModalBtn').addEventListener('click', closeTagsModal);
-  document.getElementById('addNewTagBtn').addEventListener('click', addNewCustomTag);
+  const openTagsMgrBtn = document.getElementById('openTagsMgrBtn');
+  if (openTagsMgrBtn) openTagsMgrBtn.addEventListener('click', openTagsModal);
+
+  const openTagsMgrFromModal = document.getElementById('openTagsMgrFromModal');
+  if (openTagsMgrFromModal) openTagsMgrFromModal.addEventListener('click', openTagsModal);
+
+  const closeTagsModalBtn = document.getElementById('closeTagsModalBtn');
+  if (closeTagsModalBtn) closeTagsModalBtn.addEventListener('click', closeTagsModal);
+
+  const doneTagsModalBtn = document.getElementById('doneTagsModalBtn');
+  if (doneTagsModalBtn) doneTagsModalBtn.addEventListener('click', closeTagsModal);
+
+  const addNewTagBtn = document.getElementById('addNewTagBtn');
+  if (addNewTagBtn) addNewTagBtn.addEventListener('click', addNewCustomTag);
 
   // 20. Backdrop dismissals
-  document.getElementById('blockModal').addEventListener('click', (e) => {
-    if (e.target.id === 'blockModal') closeEditModal();
-  });
-  document.getElementById('tasksHubModal').addEventListener('click', (e) => {
-    if (e.target.id === 'tasksHubModal') closeTasksHubModal();
-  });
-  document.getElementById('tagsModal').addEventListener('click', (e) => {
-    if (e.target.id === 'tagsModal') closeTagsModal();
-  });
+  const blockModal = document.getElementById('blockModal');
+  if (blockModal) {
+    blockModal.addEventListener('click', (e) => {
+      if (e.target.id === 'blockModal') closeEditModal();
+    });
+  }
+
+  const tasksHubModal = document.getElementById('tasksHubModal');
+  if (tasksHubModal) {
+    tasksHubModal.addEventListener('click', (e) => {
+      if (e.target.id === 'tasksHubModal') closeTasksHubModal();
+    });
+  }
+
+  const tagsModal = document.getElementById('tagsModal');
+  if (tagsModal) {
+    tagsModal.addEventListener('click', (e) => {
+      if (e.target.id === 'tagsModal') closeTagsModal();
+    });
+  }
   const tmplModal = document.getElementById('templatesModal');
   if (tmplModal) {
     tmplModal.addEventListener('click', (e) => {
@@ -434,6 +567,7 @@ window.addEventListener('DOMContentLoaded', () => {
       closeSettingsModal();
       closeShortcutsModal();
       closeTemplatesModal();
+      closeInsightsModal();
       return;
     }
 

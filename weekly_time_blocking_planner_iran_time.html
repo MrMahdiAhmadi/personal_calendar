@@ -90,15 +90,20 @@
             </div>
           </div>
 
-          <!-- Mobile "More Tools" Toggle Button (Visible only on < md) -->
-          <button id="mobileToolsToggleBtn" title="More Tools" data-i18n-title="mobile_tools_btn" class="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
-            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          <!-- Jump to Active Block (Mobile & Desktop) -->
+          <button id="jumpCurrentBtn" title="Jump to Active Block in Iran" data-i18n-title="jump_active_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
+            <i data-lucide="crosshair" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Settings Button (Primary mobile access) -->
+          <button id="mobileSettingsBtn" onclick="openSettingsModal('preferences')" title="Settings" data-i18n-title="settings_btn" class="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
+            <i data-lucide="settings" class="w-4 h-4"></i>
           </button>
         </div>
       </div>
 
-      <!-- Actions & Global Controls (Desktop bar / Mobile expandable toolbar) -->
-      <div id="headerActionsToolbar" class="hidden md:flex items-center gap-1.5 lg:gap-2 flex-wrap justify-between md:justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+      <!-- Actions & Global Controls (Clean Desktop bar) -->
+      <div id="headerActionsToolbar" class="flex items-center gap-1.5 lg:gap-2 flex-wrap justify-between md:justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
         <!-- Offline Indicator Badge -->
         <div id="offlineStatusBadge" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800 transition" title="Offline Mode" data-i18n-title="offline_tooltip">
           <i data-lucide="wifi-off" class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400"></i>
@@ -106,79 +111,27 @@
         </div>
 
         <!-- Task Bank Hub Button -->
-        <button id="openTasksHubBtn" title="Manage Task Bank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition min-h-[38px]">
+        <button id="openTasksHubBtn" title="Manage Task Bank" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition min-h-[38px]">
           <i data-lucide="check-square" class="w-3.5 h-3.5 text-indigo-500"></i>
           <span data-i18n="tasks_hub_btn">Task Bank</span>
         </button>
 
-        <!-- Jump to Active Block -->
-        <button id="jumpCurrentBtn" title="Jump to Active Block in Iran" data-i18n-title="jump_active_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
-          <i data-lucide="crosshair" class="w-4 h-4"></i>
+        <!-- Time Insights Button -->
+        <button id="openInsightsBtn" title="Time Insights & Analytics" data-i18n-title="insights_btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-950/60 hover:bg-violet-100 dark:hover:bg-violet-900/60 border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 text-xs font-semibold transition min-h-[38px]">
+          <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-violet-500"></i>
+          <span data-i18n="insights_btn">Time Insights</span>
         </button>
 
         <!-- Toggle Hide/Show Breaks Button -->
-        <button id="toggleBreaksBtn" title="Toggle Break Blocks" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium transition min-h-[38px]">
+        <button id="toggleBreaksBtn" title="Toggle Break Blocks" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium transition min-h-[38px]">
           <i data-lucide="coffee" id="toggleBreaksIcon" class="w-3.5 h-3.5 text-emerald-500"></i>
           <span id="toggleBreaksLabel" class="hidden sm:inline" data-i18n="hide_breaks_btn">Hide Breaks</span>
         </button>
 
-        <!-- Manage Custom Tags Button -->
-        <button id="openTagsMgrBtn" title="Manage Category Tags" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium transition min-h-[38px]">
-          <i data-lucide="tags" class="w-3.5 h-3.5 text-indigo-500"></i>
-          <span class="hidden md:inline" data-i18n="tags_btn">Tags</span>
-        </button>
-
-        <!-- Supabase Cloud Sync Status Badge & Button -->
-        <div id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800 cursor-pointer hover:opacity-80 transition min-h-[38px]" title="Supabase Cloud Connection">
+        <!-- Cloud Sync Badge (Clicking opens Cloud Settings tab) -->
+        <div id="supabaseStatusBadge" onclick="openSettingsModal('cloud')" class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800 cursor-pointer hover:opacity-80 transition min-h-[38px]" title="Supabase Cloud Connection">
           <span class="status-indicator-dot bg-amber-500"></span>
           <span data-i18n="cloud_local">Local Storage</span>
-        </div>
-
-        <button id="openSupabaseBtn" title="Supabase Cloud Settings" data-i18n-title="cloud_settings_title" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
-          <i data-lucide="cloud" class="w-4 h-4"></i>
-        </button>
-
-        <!-- Backup & Restore menu -->
-        <div class="relative inline-block text-left">
-          <button id="backupMenuBtn" title="Backup & Restore Data" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
-            <i data-lucide="database" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
-          </button>
-          <div id="backupDropdown" class="hidden absolute right-0 mt-2 w-56 rounded-xl shadow-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-xs font-medium">
-            <button id="exportJsonBtn" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2">
-              <i data-lucide="download" class="w-3.5 h-3.5 text-indigo-500"></i>
-              <span data-i18n="backup_export_json">Download Backup (JSON)</span>
-            </button>
-            <button id="copyJsonBtn" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2">
-              <i data-lucide="copy" class="w-3.5 h-3.5 text-blue-500"></i>
-              <span data-i18n="backup_copy_json">Copy Data to Clipboard</span>
-            </button>
-            <label class="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer">
-              <i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-500"></i>
-              <span data-i18n="backup_import_json">Upload Backup (JSON)</span>
-              <input type="file" id="importJsonInput" accept=".json" class="hidden">
-            </label>
-            <button id="pasteJsonBtn" class="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-700 dark:text-slate-300">
-              <i data-lucide="clipboard-paste" class="w-3.5 h-3.5 text-amber-500"></i>
-              <span data-i18n="backup_paste_json">Paste Backup Text</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Reset Menu (Day / Week) -->
-        <div class="relative inline-block text-left">
-          <button id="resetMenuBtn" title="Reset & Clean Data" data-i18n-title="reset_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
-            <i data-lucide="trash-2" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
-          </button>
-          <div id="resetDropdown" class="hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-xs font-medium">
-            <button id="triggerResetDayBtn" class="w-full text-left px-3.5 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 flex items-center gap-2">
-              <i data-lucide="calendar-x" class="w-3.5 h-3.5"></i>
-              <span data-i18n="reset_day_btn">Clear Day's Schedule</span>
-            </button>
-            <button id="triggerResetWeekBtn" class="w-full text-left px-3.5 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 flex items-center gap-2">
-              <i data-lucide="trash" class="w-3.5 h-3.5"></i>
-              <span data-i18n="reset_week_btn">Clear Week's Schedule</span>
-            </button>
-          </div>
         </div>
 
         <div class="hidden lg:block w-px h-5 bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
@@ -188,8 +141,8 @@
           <span>?</span>
         </button>
 
-        <!-- Settings Button -->
-        <button id="settingsBtn" title="Settings" data-i18n-title="settings_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
+        <!-- Unified Settings Button -->
+        <button id="settingsBtn" title="Settings" data-i18n-title="settings_btn" class="hidden md:flex p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] items-center justify-center">
           <i data-lucide="settings" class="w-4 h-4"></i>
         </button>
 
@@ -683,121 +636,328 @@
     </div>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Settings Modal (Consolidated Unified Experience) -->
   <div id="settingsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" id="settingsModalBox">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-xl shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] flex flex-col" id="settingsModalBox">
       <!-- Sheet Pull Bar Indicator on Mobile -->
       <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
 
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+      <!-- Settings Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
             <i data-lucide="settings" class="w-4 h-4"></i>
           </div>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="settings_title">Settings</h3>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="settings_title">Settings</h3>
+            <p class="text-[11px] text-slate-400">System, Cloud, Data & Categories</p>
+          </div>
         </div>
         <button id="closeSettingsModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="mt-4 space-y-4">
-        <!-- Language -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_language">Language</label>
-          <div class="grid grid-cols-2 gap-2">
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
-              <input type="radio" name="settingsLanguage" value="en" class="text-indigo-600 focus:ring-indigo-500">
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">English</span>
-            </label>
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
-              <input type="radio" name="settingsLanguage" value="fa" class="text-indigo-600 focus:ring-indigo-500">
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">فارسی</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Calendar Type -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_calendar">Calendar Type</label>
-          <div class="grid grid-cols-2 gap-2">
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
-              <input type="radio" name="settingsCalendar" value="gregorian" class="text-indigo-600 focus:ring-indigo-500">
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_calendar_gregorian">Gregorian</span>
-            </label>
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
-              <input type="radio" name="settingsCalendar" value="persian" class="text-indigo-600 focus:ring-indigo-500">
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_calendar_persian">Shamsi (Persian)</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Sleep & Wake Schedule -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_sleep_schedule">Sleep & Wake Schedule</label>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="settingsBedtimeInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_bedtime">Bedtime</label>
-              <input type="time" id="settingsBedtimeInput" value="23:30" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label for="settingsWakeTimeInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_wake_time">Wake-up Time</label>
-              <input type="time" id="settingsWakeTimeInput" value="07:30" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-          </div>
-          <p id="settingsSleepHelper" class="text-[11px] text-indigo-600 dark:text-indigo-400 mt-1.5 flex items-center gap-1 font-medium"></p>
-          <p id="settingsSleepError" class="text-[11px] text-rose-500 mt-1 hidden"></p>
-        </div>
-
-        <!-- Block Durations -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_block_durations">Block Durations</label>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="settingsWorkBlockInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_work_duration">Work Block (min)</label>
-              <input type="number" id="settingsWorkBlockInput" min="10" max="180" step="5" value="90" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-              <label for="settingsBreakBlockInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_break_duration">Break Block (min)</label>
-              <input type="number" id="settingsBreakBlockInput" min="5" max="60" step="5" value="30" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-          </div>
-          <p id="settingsCyclesHelper" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1"></p>
-          <p id="settingsDurationError" class="text-[11px] text-rose-500 mt-1 hidden"></p>
-        </div>
-
-        <!-- Timezone -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_timezone">Timezone</label>
-          <div class="space-y-2">
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
-              <input type="radio" name="settingsTimezoneType" value="system" class="text-indigo-600 focus:ring-indigo-500">
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_tz_system">Use system timezone</span>
-            </label>
-            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
-              <input type="radio" name="settingsTimezoneType" value="custom" class="text-indigo-600 focus:ring-indigo-500">
-              <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_tz_custom">Custom timezone</span>
-            </label>
-          </div>
-
-          <!-- Custom Timezone Input -->
-          <div id="settingsCustomTzContainer" class="mt-2.5 hidden">
-            <input type="text" id="settingsCustomTzInput" placeholder="e.g. Asia/Tehran, America/New_York" data-i18n-placeholder="settings_tz_placeholder" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 dir-ltr text-left">
-            <p id="settingsTzError" class="text-[11px] text-rose-500 mt-1 hidden" data-i18n="settings_tz_invalid">Invalid timezone identifier</p>
-          </div>
-        </div>
+      <!-- Settings Navigation Tabs -->
+      <div class="flex items-center gap-1.5 overflow-x-auto py-2.5 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+        <button type="button" id="settingsTabBtn-preferences" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-sm transition whitespace-nowrap">
+          <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+          <span data-i18n="settings_tab_preferences">Preferences</span>
+        </button>
+        <button type="button" id="settingsTabBtn-cloud" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition whitespace-nowrap">
+          <i data-lucide="cloud" class="w-3.5 h-3.5"></i>
+          <span data-i18n="settings_tab_cloud">Cloud Sync</span>
+        </button>
+        <button type="button" id="settingsTabBtn-backup" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition whitespace-nowrap">
+          <i data-lucide="database" class="w-3.5 h-3.5"></i>
+          <span data-i18n="settings_tab_backup">Backup & Data</span>
+        </button>
+        <button type="button" id="settingsTabBtn-tags" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition whitespace-nowrap">
+          <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+          <span data-i18n="settings_tab_tags">Category Tags</span>
+        </button>
       </div>
 
-      <div class="mt-6 flex justify-end gap-2.5">
-        <button id="cancelSettingsBtn" class="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-h-[40px]" data-i18n="modal_cancel">
-          Cancel
-        </button>
-        <button id="saveSettingsBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition min-h-[40px]" data-i18n="settings_save">
-          Apply Settings
+      <!-- Tab Panels Content Container -->
+      <div class="mt-4 overflow-y-auto flex-1 pr-1 space-y-4">
+
+        <!-- TAB 1: Preferences Panel -->
+        <div id="settingsTabPane-preferences" class="space-y-4">
+          <!-- Language -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_language">Language</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+                <input type="radio" name="settingsLanguage" value="en" class="text-indigo-600 focus:ring-indigo-500">
+                <span class="text-xs font-medium text-slate-800 dark:text-slate-200">English</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+                <input type="radio" name="settingsLanguage" value="fa" class="text-indigo-600 focus:ring-indigo-500">
+                <span class="text-xs font-medium text-slate-800 dark:text-slate-200">فارسی</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Calendar Type -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_calendar">Calendar Type</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+                <input type="radio" name="settingsCalendar" value="gregorian" class="text-indigo-600 focus:ring-indigo-500">
+                <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_calendar_gregorian">Gregorian</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+                <input type="radio" name="settingsCalendar" value="persian" class="text-indigo-600 focus:ring-indigo-500">
+                <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_calendar_persian">Shamsi (Persian)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Sleep & Wake Schedule -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_sleep_schedule">Sleep & Wake Schedule</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="settingsBedtimeInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_bedtime">Bedtime</label>
+                <input type="time" id="settingsBedtimeInput" value="23:30" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+              <div>
+                <label for="settingsWakeTimeInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_wake_time">Wake-up Time</label>
+                <input type="time" id="settingsWakeTimeInput" value="07:30" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+            </div>
+            <p id="settingsSleepHelper" class="text-[11px] text-indigo-600 dark:text-indigo-400 mt-1.5 flex items-center gap-1 font-medium"></p>
+            <p id="settingsSleepError" class="text-[11px] text-rose-500 mt-1 hidden"></p>
+          </div>
+
+          <!-- Block Durations -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_block_durations">Block Durations</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="settingsWorkBlockInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_work_duration">Work Block (min)</label>
+                <input type="number" id="settingsWorkBlockInput" min="10" max="180" step="5" value="90" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+              <div>
+                <label for="settingsBreakBlockInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_break_duration">Break Block (min)</label>
+                <input type="number" id="settingsBreakBlockInput" min="5" max="60" step="5" value="30" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              </div>
+            </div>
+            <p id="settingsCyclesHelper" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1"></p>
+            <p id="settingsDurationError" class="text-[11px] text-rose-500 mt-1 hidden"></p>
+          </div>
+
+          <!-- Timezone -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_timezone">Timezone</label>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+                <input type="radio" name="settingsTimezoneType" value="system" class="text-indigo-600 focus:ring-indigo-500">
+                <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_tz_system">Use system timezone</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+                <input type="radio" name="settingsTimezoneType" value="custom" class="text-indigo-600 focus:ring-indigo-500">
+                <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_tz_custom">Custom timezone</span>
+              </label>
+            </div>
+
+            <!-- Custom Timezone Input -->
+            <div id="settingsCustomTzContainer" class="mt-2.5 hidden">
+              <input type="text" id="settingsCustomTzInput" placeholder="e.g. Asia/Tehran, America/New_York" data-i18n-placeholder="settings_tz_placeholder" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 dir-ltr text-left">
+              <p id="settingsTzError" class="text-[11px] text-rose-500 mt-1 hidden" data-i18n="settings_tz_invalid">Invalid timezone identifier</p>
+            </div>
+          </div>
+
+          <div class="pt-2 flex justify-end">
+            <button id="saveSettingsBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition min-h-[40px]" data-i18n="settings_save">
+              Apply Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 2: Cloud Sync Panel -->
+        <div id="settingsTabPane-cloud" class="hidden space-y-4">
+          <div id="sbConnectionStatus"></div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="sb_url_label">Project Server URL (Project URL)</label>
+            <input type="text" id="sbUrlInput" placeholder="https://your-project.supabase.co" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 dir-ltr text-left">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="sb_key_label">Project Public Key (Anon / Publishable Key)</label>
+            <input type="password" id="sbKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 dir-ltr text-left">
+            <p class="text-[10px] text-slate-400 mt-1" data-i18n="sb_key_hint">Found in your Supabase dashboard under Settings > API.</p>
+          </div>
+
+          <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-200" data-i18n="sb_migrate_card_title">Migrate all current local data to Supabase</div>
+              <div class="text-[10px] text-slate-400" data-i18n="sb_migrate_card_sub">Upload all your tags, tasks, and scheduled blocks to the cloud database.</div>
+            </div>
+            <button id="uploadToSupabaseBtn" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 flex-shrink-0 min-h-[38px]">
+              <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
+              <span data-i18n="sb_migrate_btn">Upload to Cloud</span>
+            </button>
+          </div>
+
+          <div class="pt-2 flex justify-end">
+            <button id="saveSupabaseBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/30 transition min-h-[40px]" data-i18n="sb_save_btn">
+              Save & Connect
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 3: Backup & Data Maintenance Panel -->
+        <div id="settingsTabPane-backup" class="hidden space-y-4">
+          <!-- Backup actions -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button id="exportJsonBtn" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-left transition flex items-center gap-2.5">
+              <i data-lucide="download" class="w-4 h-4 text-indigo-500"></i>
+              <div>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block" data-i18n="backup_export_json">Download Backup (JSON)</span>
+                <span class="text-[10px] text-slate-400">Save full data to disk</span>
+              </div>
+            </button>
+
+            <button id="copyJsonBtn" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-left transition flex items-center gap-2.5">
+              <i data-lucide="copy" class="w-4 h-4 text-blue-500"></i>
+              <div>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block" data-i18n="backup_copy_json">Copy Data to Clipboard</span>
+                <span class="text-[10px] text-slate-400">Instant text clipboard backup</span>
+              </div>
+            </button>
+
+            <label class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left transition flex items-center gap-2.5 cursor-pointer">
+              <i data-lucide="upload" class="w-4 h-4 text-emerald-500"></i>
+              <div>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block" data-i18n="backup_import_json">Upload Backup (JSON)</span>
+                <span class="text-[10px] text-slate-400">Restore from local JSON file</span>
+              </div>
+              <input type="file" id="importJsonInput" accept=".json" class="hidden">
+            </label>
+
+            <button id="pasteJsonBtn" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-left transition flex items-center gap-2.5">
+              <i data-lucide="clipboard-paste" class="w-4 h-4 text-amber-500"></i>
+              <div>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block" data-i18n="backup_paste_json">Paste Backup Text</span>
+                <span class="text-[10px] text-slate-400">Paste raw exported payload</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Danger zone: Resets -->
+          <div class="mt-4 p-3.5 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 space-y-2">
+            <span class="text-xs font-bold text-rose-700 dark:text-rose-400 block" data-i18n="reset_btn">Reset Data</span>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <button id="triggerResetDayBtn" class="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-medium hover:bg-rose-50 transition flex items-center justify-center gap-1.5 min-h-[38px]">
+                <i data-lucide="calendar-x" class="w-3.5 h-3.5"></i>
+                <span data-i18n="reset_day_btn">Clear Day's Schedule</span>
+              </button>
+              <button id="triggerResetWeekBtn" class="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-medium hover:bg-rose-50 transition flex items-center justify-center gap-1.5 min-h-[38px]">
+                <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                <span data-i18n="reset_week_btn">Clear Week's Schedule</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: Category Tags Panel -->
+        <div id="settingsTabPane-tags" class="hidden space-y-4">
+          <!-- New tag form -->
+          <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-2">
+            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200" data-i18n="tags_new_label">Create New Tag:</span>
+            <div class="flex gap-2">
+              <input type="text" id="newTagNameInput" placeholder="Tag name (e.g., Reading, Fitness)" data-i18n-placeholder="tags_name_ph" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <input type="color" id="newTagColorPicker" value="#6366f1" class="w-10 h-9 rounded-lg cursor-pointer border-0 p-0 bg-transparent flex-shrink-0" title="Select color">
+              <button id="addNewTagBtn" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition min-h-[38px]" data-i18n="tags_save_btn">
+                Save
+              </button>
+            </div>
+          </div>
+
+          <!-- Tags List -->
+          <div>
+            <span class="text-xs font-semibold text-slate-500 mb-2 block" data-i18n="tags_existing_label">Existing Tags:</span>
+            <div id="tagsListContainer" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Settings Footer -->
+      <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 flex-shrink-0">
+        <button id="cancelSettingsBtn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-h-[38px]" data-i18n="modal_cancel">
+          Close
         </button>
       </div>
     </div>
   </div>
+
+  <!-- 10. Time Insights Modal -->
+  <div id="insightsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-3xl shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] flex flex-col" id="insightsModalBox">
+      <!-- Sheet Pull Bar Indicator on Mobile -->
+      <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
+
+      <!-- Insights Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-violet-100 dark:bg-violet-950/70 text-violet-600 dark:text-violet-400 flex items-center justify-center shadow-xs">
+            <i data-lucide="pie-chart" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="insights_modal_title">Time Insights & Analytics</h3>
+            <p class="text-[11px] text-slate-400" data-i18n="insights_modal_sub">Review deep work hours, category distribution, and schedule adherence</p>
+          </div>
+        </div>
+        <button id="closeInsightsModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Insights Dynamic Content Container -->
+      <div id="insightsContentContainer" class="mt-4 overflow-y-auto flex-1 pr-1">
+        <!-- Rendered via TimeInsights.render() -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end flex-shrink-0">
+        <button id="doneInsightsModalBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition min-h-[40px]" data-i18n="hub_done_btn">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation (Ergonomic Thumb-Zone for < md screens) -->
+  <nav id="mobileBottomNav" aria-label="Mobile Navigation" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 px-2 py-1.5 shadow-lg shadow-slate-950/10 transition-colors">
+    <div class="max-w-md mx-auto grid grid-cols-4 gap-1">
+      <!-- 1. Today View -->
+      <button id="mobileNavToday" class="flex flex-col items-center justify-center py-1.5 px-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 active:scale-95 transition min-h-[46px]">
+        <i data-lucide="calendar-check" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[10px] font-bold" data-i18n="nav_today">Today</span>
+      </button>
+
+      <!-- 2. Weekly Matrix -->
+      <button id="mobileNavWeek" class="flex flex-col items-center justify-center py-1.5 px-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 active:scale-95 transition min-h-[46px]">
+        <i data-lucide="table-2" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[10px] font-bold" data-i18n="nav_week">Week</span>
+      </button>
+
+      <!-- 3. Task Bank -->
+      <button id="mobileNavTasks" class="flex flex-col items-center justify-center py-1.5 px-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 active:scale-95 transition min-h-[46px]">
+        <i data-lucide="check-square" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[10px] font-bold" data-i18n="nav_tasks">Tasks</span>
+      </button>
+
+      <!-- 4. Insights & Analytics -->
+      <button id="mobileNavInsights" class="flex flex-col items-center justify-center py-1.5 px-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 active:scale-95 transition min-h-[46px]">
+        <i data-lucide="pie-chart" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[10px] font-bold" data-i18n="nav_insights">Insights</span>
+      </button>
+    </div>
+  </nav>
 
   <!-- Keyboard Shortcuts Modal (Desktop) -->
   <div id="shortcutsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
@@ -982,6 +1142,7 @@
   <script src="js/views.js"></script>
   <script src="js/modals.js"></script>
   <script src="js/pomodoro.js"></script>
+  <script src="js/insights.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

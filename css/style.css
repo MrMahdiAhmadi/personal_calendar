@@ -12,10 +12,16 @@
 
 /* Safe area support for iOS / Android screens */
 body {
-  padding-bottom: max(1rem, var(--sab));
+  padding-bottom: max(5rem, calc(var(--sab) + 4.5rem));
   padding-left: var(--sal);
   padding-right: var(--sar);
   -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-bottom: max(1rem, var(--sab));
+  }
 }
 
 header {
@@ -110,10 +116,20 @@ html[dir="rtl"] .sticky-time-col {
   #tagsModalBox,
   #supabaseModalBox,
   #pasteBackupBox,
-  #settingsModalBox {
+  #settingsModalBox,
+  #insightsModalBox {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     padding-bottom: max(1.5rem, calc(var(--sab) + 1rem));
+  }
+}
+
+/* Floating Pomodoro position on mobile to float cleanly above bottom nav */
+@media (max-width: 767px) {
+  #pomodoroFloatingBar {
+    bottom: calc(4.75rem + var(--sab)) !important;
+    left: 1rem !important;
+    right: 1rem !important;
   }
 }
 

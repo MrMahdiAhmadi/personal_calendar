@@ -333,10 +333,17 @@ function closeTasksHubModal() {
   renderCurrentView();
 }
 
-/* 3. Custom Tags Modal */
+/* 3. Custom Tags Modal (Now integrated in Settings Modal tab or standalone fallback) */
 function openTagsModal() {
+  // If settings modal has tags tab, switch to it, otherwise open standalone
+  const settingsModal = document.getElementById('settingsModal');
+  if (settingsModal) {
+    openSettingsModal('tags');
+    return;
+  }
   const modal = document.getElementById('tagsModal');
   const box = document.getElementById('tagsModalBox');
+  if (!modal || !box) return;
   modal.classList.remove('hidden');
   setTimeout(() => {
     modal.classList.remove('opacity-0');
@@ -348,6 +355,7 @@ function openTagsModal() {
 function closeTagsModal() {
   const modal = document.getElementById('tagsModal');
   const box = document.getElementById('tagsModalBox');
+  if (!modal || !box) return;
   modal.classList.add('opacity-0');
   box.classList.remove('scale-100', 'translate-y-0');
   box.classList.add('scale-95', 'translate-y-6');
@@ -443,7 +451,38 @@ function updateSettingsCyclesHelper() {
   }
 }
 
-function openSettingsModal() {
+function switchSettingsTab(tabName = 'preferences') {
+  const tabs = ['preferences', 'cloud', 'backup', 'tags'];
+  tabs.forEach(t => {
+    const tabBtn = document.getElementById(`settingsTabBtn-${t}`);
+    const tabPane = document.getElementById(`settingsTabPane-${t}`);
+    if (tabBtn) {
+      if (t === tabName) {
+        tabBtn.className = 'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-sm transition whitespace-nowrap';
+      } else {
+        tabBtn.className = 'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition whitespace-nowrap';
+      }
+    }
+    if (tabPane) {
+      if (t === tabName) {
+        tabPane.classList.remove('hidden');
+      } else {
+        tabPane.classList.add('hidden');
+      }
+    }
+  });
+
+  if (tabName === 'cloud') {
+    updateSupabaseModalStatus();
+  } else if (tabName === 'tags') {
+    renderCustomTagsList();
+  }
+
+  if (window.lucide && lucide.createIcons) lucide.createIcons();
+}
+
+function openSettingsModal(defaultTab = 'preferences') {
+  switchSettingsTab(defaultTab);
   const currentLang = (typeof AppSettings !== 'undefined') ? AppSettings.get('language') : I18N.currentLang;
   const currentCal = (typeof AppSettings !== 'undefined') ? AppSettings.get('calendarType') : 'gregorian';
   const currentTz = (typeof AppSettings !== 'undefined') ? AppSettings.get('timezone') : 'system';
@@ -509,6 +548,18 @@ function openSettingsModal() {
   if (tzError) {
     tzError.classList.add('hidden');
   }
+
+  // Populate Cloud Inputs if fields exist
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.getConfig) {
+    const cfg = SupabaseSync.getConfig();
+    const sbUrlEl = document.getElementById('sbUrlInput');
+    const sbKeyEl = document.getElementById('sbKeyInput');
+    if (sbUrlEl) sbUrlEl.value = cfg.url || '';
+    if (sbKeyEl) sbKeyEl.value = cfg.key || '';
+    updateSupabaseModalStatus();
+  }
+
+  renderCustomTagsList();
 
   const modal = document.getElementById('settingsModal');
   const box = document.getElementById('settingsModalBox');
@@ -660,33 +711,13 @@ function saveSettingsModalChanges() {
   return true;
 }
 
-/* 4. Supabase Cloud Settings Modal */
+/* 4. Supabase Cloud Settings Modal (Deep links into Settings Modal Cloud tab) */
 function openSupabaseModal() {
-  const cfg = SupabaseSync.getConfig();
-  document.getElementById('sbUrlInput').value = cfg.url || '';
-  document.getElementById('sbKeyInput').value = cfg.key || '';
-
-  updateSupabaseModalStatus();
-
-  const modal = document.getElementById('supabaseModal');
-  const box = document.getElementById('supabaseModalBox');
-  modal.classList.remove('hidden');
-  setTimeout(() => {
-    modal.classList.remove('opacity-0');
-    box.classList.remove('scale-95', 'translate-y-6');
-    box.classList.add('scale-100', 'translate-y-0');
-  }, 10);
+  openSettingsModal('cloud');
 }
 
 function closeSupabaseModal() {
-  const modal = document.getElementById('supabaseModal');
-  const box = document.getElementById('supabaseModalBox');
-  modal.classList.add('opacity-0');
-  box.classList.remove('scale-100', 'translate-y-0');
-  box.classList.add('scale-95', 'translate-y-6');
-  setTimeout(() => {
-    modal.classList.add('hidden');
-  }, 200);
+  closeSettingsModal();
 }
 
 function updateSupabaseModalStatus() {
