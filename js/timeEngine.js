@@ -1,11 +1,15 @@
 /* =====================================================================
-   Iran Time Engine & Live Clock (Bilingual Support)
+   Time Engine & Live Clock (Configurable Timezone & Calendar)
    ===================================================================== */
 
-function getIranTime() {
+function getCurrentTime() {
   const now = new Date();
+  const timeZone = (typeof AppSettings !== 'undefined' && AppSettings.getTimezone)
+    ? AppSettings.getTimezone()
+    : 'Asia/Tehran';
+
   const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Tehran',
+    timeZone,
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
@@ -31,20 +35,24 @@ function getIranTime() {
   };
   const todayIranDayId = mapWeekDay[vals.weekday] || 'sat';
 
-  const faFormatter = new Intl.DateTimeFormat('fa-IR', {
-    timeZone: 'Asia/Tehran',
+  const persianFormatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+    timeZone,
     weekday: 'long',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
+    year: 'numeric'
   });
 
-  const enFormatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Tehran',
+  const gregorianFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
     weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric'
   });
+
+  const persianDateStr = persianFormatter.format(now);
+  const gregorianDateStr = gregorianFormatter.format(now);
 
   return {
     hours,
@@ -52,33 +60,58 @@ function getIranTime() {
     seconds,
     totalMinutesOfDay,
     timeString: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
-    persianDateStr: faFormatter.format(now),
-    englishDateStr: enFormatter.format(now),
+    persianDateStr,
+    gregorianDateStr,
+    englishDateStr: gregorianDateStr, // alias for backwards compatibility
     todayIranDayId
   };
 }
 
+// Backward compatibility alias
+function getIranTime() {
+  return getCurrentTime();
+}
+
 function getWeekKey(offset) {
   const now = new Date();
+  const timeZone = (typeof AppSettings !== 'undefined' && AppSettings.getTimezone)
+    ? AppSettings.getTimezone()
+    : 'Asia/Tehran';
+
   const shifted = new Date(now.getTime() + (offset * 7 * 24 * 60 * 60 * 1000));
-  const year = shifted.getFullYear();
-  const firstJan = new Date(shifted.getFullYear(), 0, 1);
-  const weekNumber = Math.ceil((((shifted - firstJan) / 86400000) + firstJan.getDay() + 1) / 7);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  }).formatToParts(shifted);
+
+  const vals = {};
+  parts.forEach(p => vals[p.type] = p.value);
+  const year = parseInt(vals.year, 10);
+  const month = parseInt(vals.month, 10) - 1;
+  const day = parseInt(vals.day, 10);
+
+  const localDateInTz = new Date(Date.UTC(year, month, day));
+  const firstJanUtc = new Date(Date.UTC(year, 0, 1));
+  const dayOfYear = Math.floor((localDateInTz - firstJanUtc) / 86400000);
+  const firstDayOfWeek = firstJanUtc.getUTCDay();
+  const weekNumber = Math.ceil(((dayOfYear + firstDayOfWeek + 1) / 7));
   return `w-${year}-${weekNumber}`;
 }
 
 function updateLiveIranTicker() {
-  const iran = getIranTime();
+  const currentTime = getCurrentTime();
   const timeEl = document.getElementById('iranLiveTime');
   const dateEl = document.getElementById('iranLiveDate');
-  const isFa = typeof I18N !== 'undefined' && I18N.currentLang === 'fa';
+  const isPersian = typeof AppSettings !== 'undefined' && AppSettings.get('calendarType') === 'persian';
 
-  if (timeEl) timeEl.textContent = iran.timeString;
-  if (dateEl) dateEl.textContent = isFa ? iran.persianDateStr : iran.englishDateStr;
+  if (timeEl) timeEl.textContent = currentTime.timeString;
+  if (dateEl) dateEl.textContent = isPersian ? currentTime.persianDateStr : currentTime.gregorianDateStr;
 
   let activeIndex = -1;
   for (const meta of SCHEDULE_METADATA) {
-    if (iran.totalMinutesOfDay >= meta.startMin && iran.totalMinutesOfDay < meta.endMin) {
+    if (currentTime.totalMinutesOfDay >= meta.startMin && currentTime.totalMinutesOfDay < meta.endMin) {
       activeIndex = meta.blockIndex;
       break;
     }
@@ -89,10 +122,10 @@ function updateLiveIranTicker() {
     if (activeIndex !== -1) {
       const meta = SCHEDULE_METADATA[activeIndex];
       const isWork = meta.type === 'work';
-      const todayDayObj = DAYS_OF_WEEK.find(d => d.id === iran.todayIranDayId);
+      const todayDayObj = DAYS_OF_WEEK.find(d => d.id === currentTime.todayIranDayId);
 
       const curWeekKey = getWeekKey(0);
-      const dayData = (weeksData[curWeekKey] && weeksData[curWeekKey][iran.todayIranDayId]) || {};
+      const dayData = (weeksData[curWeekKey] && weeksData[curWeekKey][currentTime.todayIranDayId]) || {};
       const blockData = dayData[activeIndex] || {};
       const title = blockData.title || getDefaultBlockTitle(meta);
       const tagSuffix = isWork ? I18N.t('work_tag_suffix') : I18N.t('break_tag_suffix');
@@ -109,7 +142,7 @@ function updateLiveIranTicker() {
     }
   }
 
-  refreshActiveRingInViews(iran.todayIranDayId, activeIndex);
+  refreshActiveRingInViews(currentTime.todayIranDayId, activeIndex);
 }
 
 function refreshActiveRingInViews(todayDayId, activeIndex) {
@@ -128,10 +161,10 @@ function refreshActiveRingInViews(todayDayId, activeIndex) {
 }
 
 function scrollToCurrentBlock() {
-  const iran = getIranTime();
+  const currentTime = getCurrentTime();
   if (weekOffset !== 0) {
     weekOffset = 0;
-    selectedDayId = iran.todayIranDayId;
+    selectedDayId = currentTime.todayIranDayId;
     renderDayTabs();
     renderCurrentView();
   }

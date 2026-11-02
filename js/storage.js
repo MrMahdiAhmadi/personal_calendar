@@ -33,6 +33,43 @@ const SafeStorage = {
   }
 };
 
+const AppSettings = {
+  _data: { ...DEFAULT_SETTINGS },
+
+  load() {
+    try {
+      const saved = localStorage.getItem(CONFIG.SETTINGS_KEY);
+      if (saved) this._data = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+    } catch(e) {}
+    return this;
+  },
+
+  save() {
+    try {
+      localStorage.setItem(CONFIG.SETTINGS_KEY, JSON.stringify(this._data));
+    } catch(e) {}
+  },
+
+  get(key) { return this._data[key]; },
+
+  set(key, value) {
+    this._data[key] = value;
+    this.save();
+  },
+
+  getTimezone() {
+    const tz = this._data.timezone;
+    if (tz === 'system') {
+      try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tehran';
+      } catch (e) {
+        return 'Asia/Tehran';
+      }
+    }
+    return tz;
+  }
+};
+
 /* Application State */
 let customTags = [];
 let sharedTasksBank = []; // Array of { id, tagId, title }
@@ -87,8 +124,8 @@ function loadAppData() {
     document.documentElement.classList.add('dark');
   }
 
-  const iran = getIranTime();
-  selectedDayId = iran.todayIranDayId;
+  const currentTime = typeof getCurrentTime === 'function' ? getCurrentTime() : getIranTime();
+  selectedDayId = currentTime.todayIranDayId;
   ensureWeekStructure(getWeekKey(weekOffset));
 
   // Asynchronously sync from Supabase if connected

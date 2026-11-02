@@ -121,6 +121,119 @@ function closeTagsModal() {
   }, 200);
 }
 
+/* 4. Settings Modal */
+function openSettingsModal() {
+  const currentLang = (typeof AppSettings !== 'undefined') ? AppSettings.get('language') : I18N.currentLang;
+  const currentCal = (typeof AppSettings !== 'undefined') ? AppSettings.get('calendarType') : 'gregorian';
+  const currentTz = (typeof AppSettings !== 'undefined') ? AppSettings.get('timezone') : 'system';
+
+  // Language radio
+  const langRadio = document.querySelector(`input[name="settingsLanguage"][value="${currentLang}"]`);
+  if (langRadio) langRadio.checked = true;
+
+  // Calendar radio
+  const calRadio = document.querySelector(`input[name="settingsCalendar"][value="${currentCal}"]`);
+  if (calRadio) calRadio.checked = true;
+
+  // Timezone radio & input
+  const isCustomTz = currentTz !== 'system';
+  const tzRadio = document.querySelector(`input[name="settingsTimezoneType"][value="${isCustomTz ? 'custom' : 'system'}"]`);
+  if (tzRadio) tzRadio.checked = true;
+
+  const customTzContainer = document.getElementById('settingsCustomTzContainer');
+  const customTzInput = document.getElementById('settingsCustomTzInput');
+  const tzError = document.getElementById('settingsTzError');
+
+  if (customTzContainer) {
+    if (isCustomTz) {
+      customTzContainer.classList.remove('hidden');
+    } else {
+      customTzContainer.classList.add('hidden');
+    }
+  }
+
+  if (customTzInput) {
+    customTzInput.value = isCustomTz ? currentTz : 'Asia/Tehran';
+  }
+
+  if (tzError) {
+    tzError.classList.add('hidden');
+  }
+
+  const modal = document.getElementById('settingsModal');
+  const box = document.getElementById('settingsModalBox');
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    modal.classList.remove('opacity-0');
+    box.classList.remove('scale-95');
+    box.classList.add('scale-100');
+  }, 10);
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  const box = document.getElementById('settingsModalBox');
+  if (!modal || !box) return;
+  modal.classList.add('opacity-0');
+  box.classList.remove('scale-100');
+  box.classList.add('scale-95');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+  }, 200);
+}
+
+function validateTimezoneIdentifier(tz) {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function saveSettingsModalChanges() {
+  const langRadio = document.querySelector('input[name="settingsLanguage"]:checked');
+  const calRadio = document.querySelector('input[name="settingsCalendar"]:checked');
+  const tzRadio = document.querySelector('input[name="settingsTimezoneType"]:checked');
+  const customTzInput = document.getElementById('settingsCustomTzInput');
+  const tzError = document.getElementById('settingsTzError');
+
+  const newLang = langRadio ? langRadio.value : 'en';
+  const newCal = calRadio ? calRadio.value : 'gregorian';
+  const isCustomTz = tzRadio ? tzRadio.value === 'custom' : false;
+
+  let newTz = 'system';
+  if (isCustomTz) {
+    const tzVal = (customTzInput ? customTzInput.value : '').trim();
+    if (!validateTimezoneIdentifier(tzVal)) {
+      if (tzError) {
+        tzError.classList.remove('hidden');
+      }
+      return false;
+    }
+    newTz = tzVal;
+  }
+
+  if (tzError) tzError.classList.add('hidden');
+
+  AppSettings.set('timezone', newTz);
+  AppSettings.set('calendarType', newCal);
+  AppSettings.set('language', newLang);
+
+  if (I18N.currentLang !== newLang) {
+    I18N.setLanguage(newLang);
+  } else {
+    updateLiveIranTicker();
+    renderDayTabs();
+    renderCurrentView();
+  }
+
+  closeSettingsModal();
+  return true;
+}
+
 /* 4. Supabase Cloud Settings Modal */
 function openSupabaseModal() {
   const cfg = SupabaseSync.getConfig();

@@ -3,6 +3,11 @@
    ===================================================================== */
 
 window.addEventListener('DOMContentLoaded', () => {
+  // 0. Load App Settings early
+  if (typeof AppSettings !== 'undefined' && AppSettings.load) {
+    AppSettings.load();
+  }
+
   // 1. Initialize Internationalization (Default: English)
   I18N.init();
 
@@ -41,13 +46,35 @@ window.addEventListener('DOMContentLoaded', () => {
   // 5. Live Iran Clock
   setInterval(updateLiveIranTicker, 1000);
 
-  // 6. Language Toggle Listener
-  const langSwitchBtn = document.getElementById('langSwitchBtn');
-  if (langSwitchBtn) {
-    langSwitchBtn.addEventListener('click', () => {
-      I18N.toggleLanguage();
+  // 6. Settings Modal Listeners
+  const settingsBtn = document.getElementById('settingsBtn');
+  if (settingsBtn) settingsBtn.addEventListener('click', openSettingsModal);
+
+  const closeSettingsModalBtn = document.getElementById('closeSettingsModalBtn');
+  if (closeSettingsModalBtn) closeSettingsModalBtn.addEventListener('click', closeSettingsModal);
+
+  const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+  if (cancelSettingsBtn) cancelSettingsBtn.addEventListener('click', closeSettingsModal);
+
+  const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+  if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', saveSettingsModalChanges);
+
+  // Timezone radio listeners inside settings modal
+  const tzTypeRadios = document.querySelectorAll('input[name="settingsTimezoneType"]');
+  tzTypeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      const customTzContainer = document.getElementById('settingsCustomTzContainer');
+      const customTzInput = document.getElementById('settingsCustomTzInput');
+      const tzError = document.getElementById('settingsTzError');
+      if (radio.value === 'custom') {
+        if (customTzContainer) customTzContainer.classList.remove('hidden');
+        if (customTzInput && !customTzInput.value) customTzInput.value = 'Asia/Tehran';
+      } else {
+        if (customTzContainer) customTzContainer.classList.add('hidden');
+        if (tzError) tzError.classList.add('hidden');
+      }
     });
-  }
+  });
 
   // 7. Supabase Modal Listeners
   const supabaseBadge = document.getElementById('supabaseStatusBadge');
@@ -136,8 +163,8 @@ window.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('todayWeekBtn').addEventListener('click', () => {
     weekOffset = 0;
-    const iran = getIranTime();
-    selectedDayId = iran.todayIranDayId;
+    const currentTime = getCurrentTime();
+    selectedDayId = currentTime.todayIranDayId;
     renderDayTabs();
     renderCurrentView();
   });
@@ -248,6 +275,14 @@ window.addEventListener('DOMContentLoaded', () => {
       closePasteBackupModal();
       closeConfirmDialog();
       closeSupabaseModal();
+      closeSettingsModal();
     }
   });
+
+  const settingsModal = document.getElementById('settingsModal');
+  if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target.id === 'settingsModal') closeSettingsModal();
+    });
+  }
 });

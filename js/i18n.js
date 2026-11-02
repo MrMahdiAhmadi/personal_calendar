@@ -25,6 +25,20 @@ const I18N = {
       reset_btn: "Reset Data",
       theme_btn: "Toggle Theme",
       lang_switch_btn: "فارسی",
+      settings_btn: "Settings",
+
+      // Settings Modal
+      settings_title: "Settings",
+      settings_language: "Language",
+      settings_calendar: "Calendar Type",
+      settings_calendar_gregorian: "Gregorian",
+      settings_calendar_persian: "Shamsi (Persian)",
+      settings_timezone: "Timezone",
+      settings_tz_system: "Use system timezone",
+      settings_tz_custom: "Custom timezone",
+      settings_tz_placeholder: "e.g. Asia/Tehran, America/New_York",
+      settings_tz_invalid: "Invalid timezone identifier",
+      settings_save: "Apply Settings",
 
       // Week Controls
       prev_week: "Previous Week",
@@ -178,6 +192,20 @@ const I18N = {
       reset_btn: "حذف و پاکسازی دیتا",
       theme_btn: "تغییر تم رنگی",
       lang_switch_btn: "English",
+      settings_btn: "تنظیمات",
+
+      // Settings Modal
+      settings_title: "تنظیمات",
+      settings_language: "زبان",
+      settings_calendar: "نوع تقویم",
+      settings_calendar_gregorian: "میلادی",
+      settings_calendar_persian: "شمسی",
+      settings_timezone: "منطقه زمانی",
+      settings_tz_system: "استفاده از تایم‌زون سیستم",
+      settings_tz_custom: "تایم‌زون دلخواه",
+      settings_tz_placeholder: "مثلاً Asia/Tehran یا America/New_York",
+      settings_tz_invalid: "تایم‌زون نامعتبر",
+      settings_save: "اعمال تنظیمات",
 
       // Week Controls
       prev_week: "هفته قبل",
@@ -315,12 +343,20 @@ const I18N = {
   },
 
   init() {
-    const saved = localStorage.getItem(this.LANG_KEY);
-    if (saved && (saved === 'en' || saved === 'fa')) {
-      this.currentLang = saved;
+    let savedLang = null;
+    if (typeof AppSettings !== 'undefined' && AppSettings.get) {
+      savedLang = AppSettings.get('language');
+    }
+    if (!savedLang) {
+      savedLang = localStorage.getItem(this.LANG_KEY);
+    }
+    if (savedLang && (savedLang === 'en' || savedLang === 'fa')) {
+      this.currentLang = savedLang;
     } else {
-      // Default to English as requested
       this.currentLang = 'en';
+    }
+    if (typeof AppSettings !== 'undefined' && AppSettings.set) {
+      AppSettings.set('language', this.currentLang);
     }
     this.applyLanguage(this.currentLang);
   },
@@ -335,12 +371,16 @@ const I18N = {
   },
 
   toggleLanguage() {
+    // Kept as no-op or fallback
     const nextLang = this.currentLang === 'en' ? 'fa' : 'en';
     this.setLanguage(nextLang);
   },
 
   setLanguage(lang) {
     this.currentLang = lang;
+    if (typeof AppSettings !== 'undefined' && AppSettings.set) {
+      AppSettings.set('language', lang);
+    }
     localStorage.setItem(this.LANG_KEY, lang);
     this.applyLanguage(lang);
 

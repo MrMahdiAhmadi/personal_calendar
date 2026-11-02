@@ -14,7 +14,14 @@ const CONFIG = {
   VIEW_KEY: 'tb_active_view_mode',
   THEME_KEY: 'tb_theme_preference',
   HIDE_BREAKS_KEY: 'tb_hide_breaks_preference',
-  SUPABASE_CONFIG_KEY: 'tb_supabase_config'
+  SUPABASE_CONFIG_KEY: 'tb_supabase_config',
+  SETTINGS_KEY: 'tb_app_settings_v1'
+};
+
+const DEFAULT_SETTINGS = {
+  timezone: 'system',       // 'system' | any valid IANA tz string e.g. 'Asia/Tehran'
+  calendarType: 'gregorian', // 'gregorian' | 'persian'
+  language: 'en'            // 'en' | 'fa'
 };
 
 const DAYS_OF_WEEK = [
