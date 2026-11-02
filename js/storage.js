@@ -150,12 +150,18 @@ async function syncFromSupabase() {
 
     if (cloudSettings && typeof cloudSettings === 'object') {
       let scheduleNeedsRebuild = false;
-      if (cloudSettings.workBlockMins !== undefined) {
-        AppSettings.set('workBlockMins', cloudSettings.workBlockMins);
+      const rawWork = cloudSettings.workBlockMins;
+      const rawBreak = cloudSettings.breakBlockMins;
+
+      const cloudWork = rawWork !== undefined ? parseInt(rawWork, 10) : NaN;
+      const cloudBreak = rawBreak !== undefined ? parseInt(rawBreak, 10) : NaN;
+
+      if (!isNaN(cloudWork) && cloudWork >= 10 && cloudWork <= 180 && cloudWork !== AppSettings.get('workBlockMins')) {
+        AppSettings.set('workBlockMins', cloudWork);
         scheduleNeedsRebuild = true;
       }
-      if (cloudSettings.breakBlockMins !== undefined) {
-        AppSettings.set('breakBlockMins', cloudSettings.breakBlockMins);
+      if (!isNaN(cloudBreak) && cloudBreak >= 5 && cloudBreak <= 60 && cloudBreak !== AppSettings.get('breakBlockMins')) {
+        AppSettings.set('breakBlockMins', cloudBreak);
         scheduleNeedsRebuild = true;
       }
       if (scheduleNeedsRebuild && typeof generateScheduleDefinition === 'function') {
@@ -164,6 +170,13 @@ async function syncFromSupabase() {
           AppSettings.get('breakBlockMins')
         );
         changed = true;
+
+        // If Settings modal is currently open, update its inputs
+        const workInput = document.getElementById('settingsWorkBlockInput');
+        const breakInput = document.getElementById('settingsBreakBlockInput');
+        if (workInput) workInput.value = AppSettings.get('workBlockMins');
+        if (breakInput) breakInput.value = AppSettings.get('breakBlockMins');
+        if (typeof updateSettingsCyclesHelper === 'function') updateSettingsCyclesHelper();
       }
     }
 
@@ -190,9 +203,14 @@ async function syncFromSupabase() {
     }
 
     if (changed) {
+      if (typeof renderDayTabs === 'function') renderDayTabs();
       renderCurrentView();
       updateCompletionCounters();
-      showToast('داده‌ها با سوپابیس همگام شدند ☁️');
+      if (typeof updateLiveIranTicker === 'function') updateLiveIranTicker();
+      const toastMsg = (typeof I18N !== 'undefined' && I18N.t)
+        ? I18N.t('toast_cloud_synced')
+        : 'Data synced with Supabase ☁️';
+      showToast(toastMsg);
     }
   } catch (e) {
     console.warn('[Sync] Background sync error:', e);

@@ -176,6 +176,8 @@ const SupabaseSync = {
       const weeksData = {};
       if (data) {
         data.forEach(row => {
+          // Ignore sentinel internal config rows
+          if (!row.week_key || row.week_key.startsWith('__')) return;
           if (!weeksData[row.week_key]) weeksData[row.week_key] = {};
           if (!weeksData[row.week_key][row.day_id]) weeksData[row.week_key][row.day_id] = {};
           weeksData[row.week_key][row.day_id][row.block_index] = {
@@ -249,22 +251,49 @@ const SupabaseSync = {
     }
   },
 
-  // 4. Settings Operations
+  // 4. Settings Operations (with planner_settings table & planner_blocks fallback)
   async fetchSettings() {
     if (!this.isConfigured || !this.client) return null;
     try {
       this.setStatus('syncing');
-      const { data, error } = await this.client
-        .from('planner_settings')
-        .select('*');
-      this.setStatus('connected');
-      if (error) throw error;
-      const settingsMap = {};
-      if (data) {
-        data.forEach(row => {
-          settingsMap[row.key] = row.value;
-        });
+      let settingsMap = {};
+      let foundSettings = false;
+
+      // Primary strategy: planner_settings table
+      try {
+        const { data, error } = await this.client
+          .from('planner_settings')
+          .select('*');
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          data.forEach(row => {
+            settingsMap[row.key] = row.value;
+          });
+          foundSettings = true;
+        }
+      } catch (tableErr) {
+        // Table might not exist yet; will check fallback
       }
+
+      // Fallback strategy: sentinel config row in planner_blocks table
+      if (!foundSettings || Object.keys(settingsMap).length === 0) {
+        try {
+          const { data, error } = await this.client
+            .from('planner_blocks')
+            .select('*')
+            .match({ week_key: '__config__', day_id: '__settings__', block_index: 0 })
+            .maybeSingle();
+
+          if (!error && data && data.block_tasks && typeof data.block_tasks === 'object') {
+            settingsMap = { ...data.block_tasks };
+            foundSettings = true;
+          }
+        } catch (fallbackErr) {
+          // Fallback query error
+        }
+      }
+
+      this.setStatus('connected');
       return settingsMap;
     } catch (err) {
       console.warn('[Supabase] fetchSettings failed:', err);
@@ -273,22 +302,74 @@ const SupabaseSync = {
     }
   },
 
-  async upsertSetting(key, value) {
-    if (!this.isConfigured || !this.client) return;
+  async upsertSettings(settingsMap) {
+    if (!this.isConfigured || !this.client || !settingsMap || typeof settingsMap !== 'object') return false;
     try {
       this.setStatus('syncing');
-      const { error } = await this.client
-        .from('planner_settings')
-        .upsert({
-          key,
-          value,
-          updated_at: new Date().toISOString()
-        });
+      const keys = Object.keys(settingsMap);
+      if (keys.length === 0) {
+        this.setStatus('connected');
+        return true;
+      }
+
+      const rows = keys.map(k => ({
+        key: k,
+        value: settingsMap[k],
+        updated_at: new Date().toISOString()
+      }));
+
+      // 1. Upsert into planner_settings table with explicit onConflict
+      try {
+        await this.client
+          .from('planner_settings')
+          .upsert(rows, { onConflict: 'key' });
+      } catch (err) {
+        console.warn('[Supabase] planner_settings table upsert error:', err);
+      }
+
+      // 2. Persist into planner_blocks sentinel configuration row for seamless fallback
+      try {
+        let existingConfig = {};
+        const { data: existingRow } = await this.client
+          .from('planner_blocks')
+          .select('block_tasks')
+          .match({ week_key: '__config__', day_id: '__settings__', block_index: 0 })
+          .maybeSingle();
+
+        if (existingRow && existingRow.block_tasks && typeof existingRow.block_tasks === 'object') {
+          existingConfig = existingRow.block_tasks;
+        }
+
+        const mergedConfig = { ...existingConfig, ...settingsMap };
+
+        await this.client
+          .from('planner_blocks')
+          .upsert({
+            week_key: '__config__',
+            day_id: '__settings__',
+            block_index: 0,
+            title: '__app_settings__',
+            status: 'completed',
+            tag_id: 'misc',
+            notes: 'App Settings Sync Fallback',
+            block_tasks: mergedConfig,
+            updated_at: new Date().toISOString()
+          });
+      } catch (fallbackErr) {
+        console.warn('[Supabase] Sentinel fallback save error:', fallbackErr);
+      }
+
       this.setStatus('connected');
-      if (error) console.error('[Supabase] upsertSetting error:', error);
+      return true;
     } catch (e) {
+      console.error('[Supabase] upsertSettings error:', e);
       this.setStatus('error');
+      return false;
     }
+  },
+
+  async upsertSetting(key, value) {
+    return this.upsertSettings({ [key]: value });
   },
 
   // 5. Batch Upload Local Data into Supabase
@@ -316,12 +397,11 @@ const SupabaseSync = {
     if (typeof AppSettings !== 'undefined') {
       const workMins = AppSettings.get('workBlockMins');
       const breakMins = AppSettings.get('breakBlockMins');
-      const settingsRows = [];
-      if (workMins !== undefined) settingsRows.push({ key: 'workBlockMins', value: workMins, updated_at: new Date().toISOString() });
-      if (breakMins !== undefined) settingsRows.push({ key: 'breakBlockMins', value: breakMins, updated_at: new Date().toISOString() });
-      if (settingsRows.length > 0) {
-        const { error: setErr } = await this.client.from('planner_settings').upsert(settingsRows);
-        if (setErr) console.error('Migrate settings error:', setErr);
+      const settingsMap = {};
+      if (workMins !== undefined) settingsMap.workBlockMins = workMins;
+      if (breakMins !== undefined) settingsMap.breakBlockMins = breakMins;
+      if (Object.keys(settingsMap).length > 0) {
+        await this.upsertSettings(settingsMap);
       }
     }
 
