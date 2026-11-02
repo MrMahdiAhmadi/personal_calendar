@@ -6,6 +6,12 @@ window.addEventListener('DOMContentLoaded', () => {
   // 0. Load App Settings early
   if (typeof AppSettings !== 'undefined' && AppSettings.load) {
     AppSettings.load();
+    if (typeof generateScheduleDefinition === 'function') {
+      SCHEDULE_METADATA = generateScheduleDefinition(
+        AppSettings.get('workBlockMins'),
+        AppSettings.get('breakBlockMins')
+      );
+    }
   }
 
   // Service Worker Registration for PWA / Offline Support
@@ -91,6 +97,20 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const saveSettingsBtn = document.getElementById('saveSettingsBtn');
   if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', saveSettingsModalChanges);
+
+  // Block duration live calculation listeners inside settings modal
+  const workBlockInput = document.getElementById('settingsWorkBlockInput');
+  const breakBlockInput = document.getElementById('settingsBreakBlockInput');
+  if (workBlockInput) {
+    workBlockInput.addEventListener('input', () => {
+      if (typeof updateSettingsCyclesHelper === 'function') updateSettingsCyclesHelper();
+    });
+  }
+  if (breakBlockInput) {
+    breakBlockInput.addEventListener('input', () => {
+      if (typeof updateSettingsCyclesHelper === 'function') updateSettingsCyclesHelper();
+    });
+  }
 
   // Timezone radio listeners inside settings modal
   const tzTypeRadios = document.querySelectorAll('input[name="settingsTimezoneType"]');
