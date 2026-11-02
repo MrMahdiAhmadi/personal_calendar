@@ -115,6 +115,9 @@ function loadAppData() {
   const savedView = SafeStorage.getItem(CONFIG.VIEW_KEY);
   if (savedView && ['weekly', 'daily-vertical', 'daily-horizontal'].includes(savedView)) {
     currentViewMode = savedView;
+  } else if (window.innerWidth < 768) {
+    // Default to daily vertical on mobile screens for a vastly better touch experience
+    currentViewMode = 'daily-vertical';
   }
 
   const savedTheme = SafeStorage.getItem(CONFIG.THEME_KEY);

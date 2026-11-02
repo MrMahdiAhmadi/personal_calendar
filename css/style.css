@@ -1,24 +1,45 @@
 /* =====================================================================
    Custom Styles & Scrollbar for Weekly Planner
+   Mobile UX & Responsive Enhancements
    ===================================================================== */
 
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+/* Safe area support for iOS / Android screens */
+body {
+  padding-bottom: max(1rem, var(--sab));
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+  -webkit-tap-highlight-color: transparent;
+}
+
+header {
+  padding-top: max(0.625rem, var(--sat));
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  height: 7px;
-  width: 7px;
+  height: 6px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(100, 116, 139, 0.1);
+  background: rgba(100, 116, 139, 0.08);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.35);
+  background: rgba(100, 116, 139, 0.3);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.55);
+  background: rgba(100, 116, 139, 0.5);
 }
 
 .pulse-ring {
@@ -34,11 +55,12 @@
 
 .weekly-scroll-container {
   scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .break-block-compact {
-  opacity: 0.82;
-  font-size: 0.72rem;
+  opacity: 0.85;
+  font-size: 0.75rem;
 }
 
 .break-block-compact:hover {
@@ -51,4 +73,48 @@
   height: 8px;
   border-radius: 50%;
   display: inline-block;
+}
+
+/* Touch targets & Mobile Ergonomics */
+@media (max-width: 640px) {
+  /* Prevent automatic iOS zoom when focusing input fields */
+  input[type="text"],
+  input[type="number"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Improve tap target feedback on mobile touch screens */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Bottom sheet modal styling for mobile screens */
+  #modalBox,
+  #tasksHubBox,
+  #tagsModalBox,
+  #supabaseModalBox,
+  #pasteBackupBox,
+  #settingsModalBox {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-bottom: max(1.5rem, calc(var(--sab) + 1rem));
+  }
+}
+
+/* Smooth horizontal scroll for day tabs & tag chips */
+#dayTabsContainer,
+#tasksHubFilterTabs {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+
+#dayTabsContainer::-webkit-scrollbar,
+#tasksHubFilterTabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
