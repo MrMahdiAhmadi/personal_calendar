@@ -3,13 +3,12 @@
    Caches local files and external CDN dependencies for offline use
    ===================================================================== */
 
-const CACHE_NAME = 'time-planner-v2';
+const CACHE_NAME = 'time-planner-v3';
 
 // Core static assets necessary for offline execution
 const PRECACHE_ASSETS = [
   './',
   './index.html',
-  './weekly_time_blocking_planner_iran_time.html',
   './manifest.json',
   './css/style.css',
   './icons/icon.svg',
