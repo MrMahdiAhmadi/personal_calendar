@@ -7,12 +7,12 @@ function renderDayTabs() {
   if (!container) return;
   container.innerHTML = '';
 
-  const iran = getIranTime();
+  const currentTime = getCurrentTime();
   const isCurrentWeek = weekOffset === 0;
 
   DAYS_OF_WEEK.forEach(day => {
     const isSelected = (day.id === selectedDayId) && (currentViewMode !== 'weekly');
-    const isToday = isCurrentWeek && (day.id === iran.todayIranDayId);
+    const isToday = isCurrentWeek && (day.id === currentTime.todayIranDayId);
 
     const btn = document.createElement('button');
     btn.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex-shrink-0 ${
@@ -84,11 +84,11 @@ function renderWeeklyMatrixView(container, weekKey) {
       <div class="p-3 text-center border-l border-slate-200 dark:border-slate-800">${I18N.t('time_col_header')}</div>
   `;
 
-  const iran = getIranTime();
+  const currentTime = getCurrentTime();
   const isCurWeek = weekOffset === 0;
 
   DAYS_OF_WEEK.forEach(day => {
-    const isToday = isCurWeek && day.id === iran.todayIranDayId;
+    const isToday = isCurWeek && day.id === currentTime.todayIranDayId;
     headerHtml += `
       <div class="p-3 text-center border-l border-slate-200 dark:border-slate-800 last:border-l-0 ${isToday ? 'bg-indigo-50/80 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300' : ''}">
         <div class="flex items-center justify-center gap-1.5">

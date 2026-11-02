@@ -77,10 +77,9 @@
 
       <!-- Actions & Global Controls -->
       <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-        <!-- Language Switcher Button -->
-        <button id="langSwitchBtn" title="Switch Language / تغییر زبان" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition">
-          <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-500"></i>
-          <span id="langSwitchLabel">فارسی</span>
+        <!-- Settings Button -->
+        <button id="settingsBtn" title="Settings" data-i18n-title="settings_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition">
+          <i data-lucide="settings" class="w-4 h-4"></i>
         </button>
 
         <!-- Supabase Cloud Sync Status Badge & Button -->
@@ -529,6 +528,85 @@
       <div class="flex items-center justify-center gap-2">
         <button id="confirmCancelBtn" class="flex-1 px-4 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-i18n="confirm_cancel">Cancel</button>
         <button id="confirmAcceptBtn" class="flex-1 px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white" data-i18n="confirm_accept">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 transform transition-transform scale-95 duration-200" id="settingsModalBox">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="settings_title">Settings</h3>
+        </div>
+        <button id="closeSettingsModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4">
+        <!-- Language -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_language">Language</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+              <input type="radio" name="settingsLanguage" value="en" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">English</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+              <input type="radio" name="settingsLanguage" value="fa" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200">فارسی</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Calendar Type -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_calendar">Calendar Type</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+              <input type="radio" name="settingsCalendar" value="gregorian" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_calendar_gregorian">Gregorian</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+              <input type="radio" name="settingsCalendar" value="persian" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_calendar_persian">Shamsi (Persian)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Timezone -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_timezone">Timezone</label>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+              <input type="radio" name="settingsTimezoneType" value="system" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_tz_system">Use system timezone</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition">
+              <input type="radio" name="settingsTimezoneType" value="custom" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="text-xs font-medium text-slate-800 dark:text-slate-200" data-i18n="settings_tz_custom">Custom timezone</span>
+            </label>
+          </div>
+
+          <!-- Custom Timezone Input -->
+          <div id="settingsCustomTzContainer" class="mt-2.5 hidden">
+            <input type="text" id="settingsCustomTzInput" placeholder="e.g. Asia/Tehran, America/New_York" data-i18n-placeholder="settings_tz_placeholder" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 dir-ltr text-left">
+            <p id="settingsTzError" class="text-[11px] text-rose-500 mt-1 hidden" data-i18n="settings_tz_invalid">Invalid timezone identifier</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-2.5">
+        <button id="cancelSettingsBtn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-i18n="modal_cancel">
+          Cancel
+        </button>
+        <button id="saveSettingsBtn" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition" data-i18n="settings_save">
+          Apply Settings
+        </button>
       </div>
     </div>
   </div>
