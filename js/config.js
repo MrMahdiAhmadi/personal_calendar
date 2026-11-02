@@ -23,7 +23,9 @@ const DEFAULT_SETTINGS = {
   calendarType: 'gregorian', // 'gregorian' | 'persian'
   language: 'en',           // 'en' | 'fa'
   workBlockMins: 90,        // valid range 10-180, step 5
-  breakBlockMins: 30        // valid range 5-60, step 5
+  breakBlockMins: 30,       // valid range 5-60, step 5
+  bedtime: '23:30',         // 'HH:mm' format
+  wakeTime: '07:30'         // 'HH:mm' format
 };
 
 const DAYS_OF_WEEK = [
@@ -69,51 +71,145 @@ const DEFAULT_TASK_BANK = [
 ];
 
 function formatMinutes(mins) {
-  const h = Math.floor(mins / 60) % 24;
-  const m = mins % 60;
+  const normalized = ((mins % 1440) + 1440) % 1440;
+  const h = Math.floor(normalized / 60);
+  const m = normalized % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function generateScheduleDefinition(workMins = 90, breakMins = 30) {
+function parseTimeToMinutes(timeStr, defaultMins = 0) {
+  if (typeof timeStr !== 'string') return defaultMins;
+  const parts = timeStr.trim().split(':');
+  if (parts.length < 2) return defaultMins;
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m)) return defaultMins;
+  return (((h * 60 + m) % 1440) + 1440) % 1440;
+}
+
+function generateScheduleDefinition(workMins, breakMins, bedtimeStr, wakeTimeStr) {
+  if (typeof AppSettings !== 'undefined' && AppSettings.get) {
+    if (workMins === undefined) workMins = AppSettings.get('workBlockMins');
+    if (breakMins === undefined) breakMins = AppSettings.get('breakBlockMins');
+    if (bedtimeStr === undefined) bedtimeStr = AppSettings.get('bedtime');
+    if (wakeTimeStr === undefined) wakeTimeStr = AppSettings.get('wakeTime');
+  }
+
   const work = parseInt(workMins, 10) || 90;
   const rest = parseInt(breakMins, 10) || 30;
+  const bedtime = bedtimeStr || '23:30';
+  const wakeTime = wakeTimeStr || '07:30';
+
+  const wakeMin = parseTimeToMinutes(wakeTime, 7 * 60 + 30);
+  const bedMin = parseTimeToMinutes(bedtime, 23 * 60 + 30);
+
+  // Total awake duration in minutes
+  let awakeDuration = bedMin - wakeMin;
+  if (awakeDuration <= 0) awakeDuration += 1440;
+  // Sleep duration in minutes
+  const sleepDuration = 1440 - awakeDuration;
+
   const cycleDuration = work + rest;
-  const cyclesPerDay = Math.floor((24 * 60) / cycleDuration);
-
   const schedule = [];
-  let currentMinutes = 0;
+  let blockIndexCounter = 0;
+  let currentOffset = 0; // minutes relative to wakeMin
+  let cycleNum = 1;
 
-  for (let cycle = 0; cycle < cyclesPerDay; cycle++) {
-    // Work Block
-    const workStart = currentMinutes;
-    const workEnd = currentMinutes + work;
-    schedule.push({
-      blockIndex: cycle * 2,
-      type: 'work',
-      cycleNumber: cycle + 1,
-      startMin: workStart,
-      endMin: workEnd,
-      startTimeStr: formatMinutes(workStart),
-      endTimeStr: formatMinutes(workEnd),
-      durationMins: work
-    });
-    currentMinutes = workEnd;
+  while (currentOffset < awakeDuration) {
+    const remainingAwake = awakeDuration - currentOffset;
 
-    // Break Block
-    const breakStart = currentMinutes;
-    const breakEnd = currentMinutes + rest;
-    schedule.push({
-      blockIndex: cycle * 2 + 1,
-      type: 'break',
-      cycleNumber: cycle + 1,
-      startMin: breakStart,
-      endMin: breakEnd,
-      startTimeStr: formatMinutes(breakStart),
-      endTimeStr: formatMinutes(breakEnd),
-      durationMins: rest
-    });
-    currentMinutes = breakEnd;
+    if (remainingAwake >= cycleDuration) {
+      // Full cycle: work block
+      const wStart = (wakeMin + currentOffset) % 1440;
+      const wEnd = (wakeMin + currentOffset + work) % 1440;
+      schedule.push({
+        blockIndex: blockIndexCounter++,
+        type: 'work',
+        cycleNumber: cycleNum,
+        startMin: wStart,
+        endMin: wEnd,
+        startTimeStr: formatMinutes(wStart),
+        endTimeStr: formatMinutes(wEnd),
+        durationMins: work
+      });
+      currentOffset += work;
+
+      // Full cycle: break block
+      const bStart = (wakeMin + currentOffset) % 1440;
+      const bEnd = (wakeMin + currentOffset + rest) % 1440;
+      schedule.push({
+        blockIndex: blockIndexCounter++,
+        type: 'break',
+        cycleNumber: cycleNum,
+        startMin: bStart,
+        endMin: bEnd,
+        startTimeStr: formatMinutes(bStart),
+        endTimeStr: formatMinutes(bEnd),
+        durationMins: rest
+      });
+      currentOffset += rest;
+      cycleNum++;
+    } else if (remainingAwake >= work) {
+      // Can fit one more work block, with remainder as winddown
+      const wStart = (wakeMin + currentOffset) % 1440;
+      const wEnd = (wakeMin + currentOffset + work) % 1440;
+      schedule.push({
+        blockIndex: blockIndexCounter++,
+        type: 'work',
+        cycleNumber: cycleNum,
+        startMin: wStart,
+        endMin: wEnd,
+        startTimeStr: formatMinutes(wStart),
+        endTimeStr: formatMinutes(wEnd),
+        durationMins: work
+      });
+      currentOffset += work;
+
+      const rem = awakeDuration - currentOffset;
+      if (rem > 0) {
+        const wdStart = (wakeMin + currentOffset) % 1440;
+        const wdEnd = (wakeMin + currentOffset + rem) % 1440;
+        schedule.push({
+          blockIndex: blockIndexCounter++,
+          type: 'winddown',
+          cycleNumber: null,
+          startMin: wdStart,
+          endMin: wdEnd,
+          startTimeStr: formatMinutes(wdStart),
+          endTimeStr: formatMinutes(wdEnd),
+          durationMins: rem
+        });
+        currentOffset += rem;
+      }
+    } else {
+      // Remaining time is less than a work block: designate as floating winddown block
+      const wdStart = (wakeMin + currentOffset) % 1440;
+      const wdEnd = (wakeMin + currentOffset + remainingAwake) % 1440;
+      schedule.push({
+        blockIndex: blockIndexCounter++,
+        type: 'winddown',
+        cycleNumber: null,
+        startMin: wdStart,
+        endMin: wdEnd,
+        startTimeStr: formatMinutes(wdStart),
+        endTimeStr: formatMinutes(wdEnd),
+        durationMins: remainingAwake
+      });
+      currentOffset += remainingAwake;
+    }
   }
+
+  // Unified sleep block covering bedMin -> wakeMin
+  schedule.push({
+    blockIndex: blockIndexCounter++,
+    type: 'sleep',
+    cycleNumber: null,
+    startMin: bedMin,
+    endMin: wakeMin,
+    startTimeStr: formatMinutes(bedMin),
+    endTimeStr: formatMinutes(wakeMin),
+    durationMins: sleepDuration
+  });
 
   return schedule;
 }
@@ -122,9 +218,19 @@ let SCHEDULE_METADATA = generateScheduleDefinition();
 
 function getDefaultBlockTitle(meta) {
   if (typeof I18N !== 'undefined') {
-    return meta.type === 'work'
-      ? I18N.t('cycle_work', { cycle: meta.cycleNumber })
-      : I18N.t('cycle_break', { cycle: meta.cycleNumber });
+    if (meta.type === 'work') {
+      return I18N.t('cycle_work', { cycle: meta.cycleNumber, mins: meta.durationMins });
+    } else if (meta.type === 'break') {
+      return I18N.t('cycle_break', { cycle: meta.cycleNumber, mins: meta.durationMins });
+    } else if (meta.type === 'winddown') {
+      return I18N.t('block_type_winddown');
+    } else if (meta.type === 'sleep') {
+      return I18N.t('block_type_sleep');
+    }
   }
-  return meta.type === 'work' ? `Cycle ${meta.cycleNumber}: Deep Work` : `Cycle ${meta.cycleNumber}: Rest & Recharge`;
+  if (meta.type === 'work') return `Cycle ${meta.cycleNumber}: Deep Work`;
+  if (meta.type === 'break') return `Cycle ${meta.cycleNumber}: Rest & Recharge`;
+  if (meta.type === 'winddown') return 'Wind-down & Day Review';
+  if (meta.type === 'sleep') return 'Sleep & Recovery';
+  return 'Block';
 }

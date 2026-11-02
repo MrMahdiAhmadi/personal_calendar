@@ -11,9 +11,16 @@ function openEditModal(weekKey, dayId, blockIndex) {
 
   document.getElementById('modalTimeRange').textContent = `${meta.startTimeStr} - ${meta.endTimeStr}`;
   document.getElementById('modalDayPill').textContent = dayObj.name;
-  document.getElementById('modalBlockType').textContent = meta.type === 'work' 
-    ? I18N.t('modal_block_work_desc', { cycle: meta.cycleNumber }) 
-    : I18N.t('modal_block_break_desc', { cycle: meta.cycleNumber });
+
+  if (meta.type === 'work') {
+    document.getElementById('modalBlockType').textContent = I18N.t('modal_block_work_desc', { cycle: meta.cycleNumber });
+  } else if (meta.type === 'break') {
+    document.getElementById('modalBlockType').textContent = I18N.t('modal_block_break_desc', { cycle: meta.cycleNumber });
+  } else if (meta.type === 'winddown') {
+    document.getElementById('modalBlockType').textContent = I18N.t('block_type_winddown');
+  } else if (meta.type === 'sleep') {
+    document.getElementById('modalBlockType').textContent = I18N.t('block_type_sleep');
+  }
 
   document.getElementById('modalTitleInput').value = block.title || '';
   document.getElementById('modalStatusSelect').value = block.status || 'pending';
@@ -159,7 +166,36 @@ function closeShortcutsModal() {
 function updateSettingsCyclesHelper() {
   const workInput = document.getElementById('settingsWorkBlockInput');
   const breakInput = document.getElementById('settingsBreakBlockInput');
+  const bedInput = document.getElementById('settingsBedtimeInput');
+  const wakeInput = document.getElementById('settingsWakeTimeInput');
   const helper = document.getElementById('settingsCyclesHelper');
+  const sleepHelper = document.getElementById('settingsSleepHelper');
+
+  const bedVal = bedInput ? bedInput.value : (AppSettings.get('bedtime') || '23:30');
+  const wakeVal = wakeInput ? wakeInput.value : (AppSettings.get('wakeTime') || '07:30');
+
+  const wakeMin = parseTimeToMinutes(wakeVal, 7 * 60 + 30);
+  const bedMin = parseTimeToMinutes(bedVal, 23 * 60 + 30);
+
+  let awakeMins = bedMin - wakeMin;
+  if (awakeMins <= 0) awakeMins += 1440;
+  const sleepMins = 1440 - awakeMins;
+
+  if (sleepHelper) {
+    const sH = Math.floor(sleepMins / 60);
+    const sM = sleepMins % 60;
+    const aH = (awakeMins / 60).toFixed(1).replace('.0', '');
+    if (typeof I18N !== 'undefined' && I18N.t) {
+      sleepHelper.textContent = I18N.t('settings_sleep_helper', {
+        hours: sH,
+        mins: sM,
+        awake: aH
+      });
+    } else {
+      sleepHelper.textContent = `${sH}h ${sM}m sleep • ${aH}h awake per day`;
+    }
+  }
+
   if (!workInput || !breakInput || !helper) return;
 
   const work = parseInt(workInput.value, 10);
@@ -167,7 +203,7 @@ function updateSettingsCyclesHelper() {
 
   if (!isNaN(work) && !isNaN(rest) && (work + rest) > 0) {
     const cycleMins = work + rest;
-    const cycles = Math.floor((24 * 60) / cycleMins);
+    const cycles = Math.floor(awakeMins / cycleMins);
     const totalMinutesCovered = cycles * cycleMins;
     const hours = Math.floor(totalMinutesCovered / 60);
     const mins = totalMinutesCovered % 60;
@@ -180,7 +216,7 @@ function updateSettingsCyclesHelper() {
         hours: hoursText
       });
     } else {
-      helper.textContent = `≈ ${cycles} full cycles/day (${cycles * 2} blocks, ${hoursText} total)`;
+      helper.textContent = `≈ ${cycles} full cycles in awake hours (${cycles * 2} blocks, ${hoursText} total)`;
     }
   } else {
     helper.textContent = '';
@@ -193,6 +229,8 @@ function openSettingsModal() {
   const currentTz = (typeof AppSettings !== 'undefined') ? AppSettings.get('timezone') : 'system';
   const currentWork = (typeof AppSettings !== 'undefined') ? (AppSettings.get('workBlockMins') || 90) : 90;
   const currentBreak = (typeof AppSettings !== 'undefined') ? (AppSettings.get('breakBlockMins') || 30) : 30;
+  const currentBedtime = (typeof AppSettings !== 'undefined') ? (AppSettings.get('bedtime') || '23:30') : '23:30';
+  const currentWakeTime = (typeof AppSettings !== 'undefined') ? (AppSettings.get('wakeTime') || '07:30') : '07:30';
 
   // Language radio
   const langRadio = document.querySelector(`input[name="settingsLanguage"][value="${currentLang}"]`);
@@ -201,6 +239,18 @@ function openSettingsModal() {
   // Calendar radio
   const calRadio = document.querySelector(`input[name="settingsCalendar"][value="${currentCal}"]`);
   if (calRadio) calRadio.checked = true;
+
+  // Sleep / Wake times
+  const bedtimeInput = document.getElementById('settingsBedtimeInput');
+  const wakeTimeInput = document.getElementById('settingsWakeTimeInput');
+  const sleepError = document.getElementById('settingsSleepError');
+
+  if (bedtimeInput) bedtimeInput.value = currentBedtime;
+  if (wakeTimeInput) wakeTimeInput.value = currentWakeTime;
+  if (sleepError) {
+    sleepError.textContent = '';
+    sleepError.classList.add('hidden');
+  }
 
   // Block durations
   const workInput = document.getElementById('settingsWorkBlockInput');
@@ -282,10 +332,29 @@ function saveSettingsModalChanges() {
   const workInput = document.getElementById('settingsWorkBlockInput');
   const breakInput = document.getElementById('settingsBreakBlockInput');
   const durationError = document.getElementById('settingsDurationError');
+  const bedtimeInput = document.getElementById('settingsBedtimeInput');
+  const wakeTimeInput = document.getElementById('settingsWakeTimeInput');
+  const sleepError = document.getElementById('settingsSleepError');
 
   const newLang = langRadio ? langRadio.value : 'en';
   const newCal = calRadio ? calRadio.value : 'gregorian';
   const isCustomTz = tzRadio ? tzRadio.value === 'custom' : false;
+
+  // Validate sleep & wake times
+  const newBedtime = bedtimeInput ? bedtimeInput.value.trim() : '23:30';
+  const newWakeTime = wakeTimeInput ? wakeTimeInput.value.trim() : '07:30';
+
+  if (!newBedtime || !newWakeTime || newBedtime === newWakeTime) {
+    if (sleepError) {
+      sleepError.textContent = typeof I18N !== 'undefined' ? I18N.t('settings_time_invalid') : 'Invalid bedtime / wake-up time.';
+      sleepError.classList.remove('hidden');
+    }
+    return false;
+  }
+  if (sleepError) {
+    sleepError.textContent = '';
+    sleepError.classList.add('hidden');
+  }
 
   // Validate block durations
   const rawWork = workInput ? String(workInput.value).trim() : '';
@@ -332,6 +401,8 @@ function saveSettingsModalChanges() {
 
   AppSettings.set('workBlockMins', workMins);
   AppSettings.set('breakBlockMins', breakMins);
+  AppSettings.set('bedtime', newBedtime);
+  AppSettings.set('wakeTime', newWakeTime);
   AppSettings.set('timezone', newTz);
   AppSettings.set('calendarType', newCal);
   AppSettings.set('language', newLang);
@@ -340,16 +411,20 @@ function saveSettingsModalChanges() {
     if (typeof SupabaseSync.upsertSettings === 'function') {
       SupabaseSync.upsertSettings({
         workBlockMins: workMins,
-        breakBlockMins: breakMins
+        breakBlockMins: breakMins,
+        bedtime: newBedtime,
+        wakeTime: newWakeTime
       });
     } else if (typeof SupabaseSync.upsertSetting === 'function') {
       SupabaseSync.upsertSetting('workBlockMins', workMins);
       SupabaseSync.upsertSetting('breakBlockMins', breakMins);
+      SupabaseSync.upsertSetting('bedtime', newBedtime);
+      SupabaseSync.upsertSetting('wakeTime', newWakeTime);
     }
   }
 
   if (typeof generateScheduleDefinition === 'function') {
-    SCHEDULE_METADATA = generateScheduleDefinition(workMins, breakMins);
+    SCHEDULE_METADATA = generateScheduleDefinition(workMins, breakMins, newBedtime, newWakeTime);
   }
 
   if (I18N.currentLang !== newLang) {
@@ -509,7 +584,9 @@ function getFullBackupPayload() {
     exportedAt: new Date().toISOString(),
     settings: {
       workBlockMins: typeof AppSettings !== 'undefined' ? AppSettings.get('workBlockMins') : 90,
-      breakBlockMins: typeof AppSettings !== 'undefined' ? AppSettings.get('breakBlockMins') : 30
+      breakBlockMins: typeof AppSettings !== 'undefined' ? AppSettings.get('breakBlockMins') : 30,
+      bedtime: typeof AppSettings !== 'undefined' ? AppSettings.get('bedtime') : '23:30',
+      wakeTime: typeof AppSettings !== 'undefined' ? AppSettings.get('wakeTime') : '07:30'
     },
     customTags,
     sharedTasksBank,
@@ -531,10 +608,15 @@ function applyFullBackupPayload(parsed) {
     const rest = parseInt(parsed.settings.breakBlockMins, 10);
     if (!isNaN(work) && work >= 10 && work <= 180) AppSettings.set('workBlockMins', work);
     if (!isNaN(rest) && rest >= 5 && rest <= 60) AppSettings.set('breakBlockMins', rest);
+    if (parsed.settings.bedtime) AppSettings.set('bedtime', parsed.settings.bedtime);
+    if (parsed.settings.wakeTime) AppSettings.set('wakeTime', parsed.settings.wakeTime);
+
     if (typeof generateScheduleDefinition === 'function') {
       SCHEDULE_METADATA = generateScheduleDefinition(
         AppSettings.get('workBlockMins'),
-        AppSettings.get('breakBlockMins')
+        AppSettings.get('breakBlockMins'),
+        AppSettings.get('bedtime'),
+        AppSettings.get('wakeTime')
       );
     }
   }

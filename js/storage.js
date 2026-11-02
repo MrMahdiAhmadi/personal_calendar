@@ -152,6 +152,8 @@ async function syncFromSupabase() {
       let scheduleNeedsRebuild = false;
       const rawWork = cloudSettings.workBlockMins;
       const rawBreak = cloudSettings.breakBlockMins;
+      const rawBed = cloudSettings.bedtime;
+      const rawWake = cloudSettings.wakeTime;
 
       const cloudWork = rawWork !== undefined ? parseInt(rawWork, 10) : NaN;
       const cloudBreak = rawBreak !== undefined ? parseInt(rawBreak, 10) : NaN;
@@ -164,18 +166,33 @@ async function syncFromSupabase() {
         AppSettings.set('breakBlockMins', cloudBreak);
         scheduleNeedsRebuild = true;
       }
+      if (rawBed && typeof rawBed === 'string' && rawBed !== AppSettings.get('bedtime')) {
+        AppSettings.set('bedtime', rawBed);
+        scheduleNeedsRebuild = true;
+      }
+      if (rawWake && typeof rawWake === 'string' && rawWake !== AppSettings.get('wakeTime')) {
+        AppSettings.set('wakeTime', rawWake);
+        scheduleNeedsRebuild = true;
+      }
+
       if (scheduleNeedsRebuild && typeof generateScheduleDefinition === 'function') {
         SCHEDULE_METADATA = generateScheduleDefinition(
           AppSettings.get('workBlockMins'),
-          AppSettings.get('breakBlockMins')
+          AppSettings.get('breakBlockMins'),
+          AppSettings.get('bedtime'),
+          AppSettings.get('wakeTime')
         );
         changed = true;
 
         // If Settings modal is currently open, update its inputs
         const workInput = document.getElementById('settingsWorkBlockInput');
         const breakInput = document.getElementById('settingsBreakBlockInput');
+        const bedInput = document.getElementById('settingsBedtimeInput');
+        const wakeInput = document.getElementById('settingsWakeTimeInput');
         if (workInput) workInput.value = AppSettings.get('workBlockMins');
         if (breakInput) breakInput.value = AppSettings.get('breakBlockMins');
+        if (bedInput) bedInput.value = AppSettings.get('bedtime');
+        if (wakeInput) wakeInput.value = AppSettings.get('wakeTime');
         if (typeof updateSettingsCyclesHelper === 'function') updateSettingsCyclesHelper();
       }
     }
@@ -283,25 +300,32 @@ function updateCompletionCounters() {
 
   let dayCompleted = 0;
   let weekCompleted = 0;
-  const blocksPerDay = typeof SCHEDULE_METADATA !== 'undefined' ? SCHEDULE_METADATA.length : 24;
-  const totalWeekBlocks = blocksPerDay * 7;
+
+  // Count only awake blocks (work + winddown) for realistic goal setting
+  const metadataList = typeof SCHEDULE_METADATA !== 'undefined' ? SCHEDULE_METADATA : [];
+  const awakeBlocks = metadataList.filter(meta => meta.type === 'work' || meta.type === 'winddown');
+  const awakeBlockIndices = new Set(awakeBlocks.map(meta => meta.blockIndex));
+  const awakeCountPerDay = awakeBlockIndices.size;
+  const totalAwakeWeek = awakeCountPerDay * 7;
 
   DAYS_OF_WEEK.forEach(d => {
-    for (let i = 0; i < blocksPerDay; i++) {
-      const item = weeksData[curWeekKey][d.id][i];
-      if (item && item.status === 'completed') {
-        weekCompleted++;
-        if (d.id === selectedDayId) {
-          dayCompleted++;
+    metadataList.forEach(meta => {
+      if (awakeBlockIndices.has(meta.blockIndex)) {
+        const item = weeksData[curWeekKey][d.id][meta.blockIndex];
+        if (item && item.status === 'completed') {
+          weekCompleted++;
+          if (d.id === selectedDayId) {
+            dayCompleted++;
+          }
         }
       }
-    }
+    });
   });
 
   const dayCounter = document.getElementById('dayCompletedCounter');
   const weekCounter = document.getElementById('weekCompletedCounter');
-  if (dayCounter) dayCounter.textContent = `${dayCompleted} / ${blocksPerDay}`;
-  if (weekCounter) weekCounter.textContent = `${weekCompleted} / ${totalWeekBlocks}`;
+  if (dayCounter) dayCounter.textContent = `${dayCompleted} / ${awakeCountPerDay}`;
+  if (weekCounter) weekCounter.textContent = `${weekCompleted} / ${totalAwakeWeek}`;
 }
 
 function getTagById(tagId) {
