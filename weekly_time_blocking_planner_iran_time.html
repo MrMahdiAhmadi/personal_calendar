@@ -664,6 +664,23 @@
           </div>
         </div>
 
+        <!-- Block Durations -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_block_durations">Block Durations</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="settingsWorkBlockInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_work_duration">Work Block (min)</label>
+              <input type="number" id="settingsWorkBlockInput" min="10" max="180" step="5" value="90" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label for="settingsBreakBlockInput" class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1" data-i18n="settings_break_duration">Break Block (min)</label>
+              <input type="number" id="settingsBreakBlockInput" min="5" max="60" step="5" value="30" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+          <p id="settingsCyclesHelper" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1"></p>
+          <p id="settingsDurationError" class="text-[11px] text-rose-500 mt-1 hidden"></p>
+        </div>
+
         <!-- Timezone -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2" data-i18n="settings_timezone">Timezone</label>

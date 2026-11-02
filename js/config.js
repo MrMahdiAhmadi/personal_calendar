@@ -21,7 +21,9 @@ const CONFIG = {
 const DEFAULT_SETTINGS = {
   timezone: 'system',       // 'system' | any valid IANA tz string e.g. 'Asia/Tehran'
   calendarType: 'gregorian', // 'gregorian' | 'persian'
-  language: 'en'            // 'en' | 'fa'
+  language: 'en',           // 'en' | 'fa'
+  workBlockMins: 90,        // valid range 10-180, step 5
+  breakBlockMins: 30        // valid range 5-60, step 5
 };
 
 const DAYS_OF_WEEK = [
@@ -72,14 +74,19 @@ function formatMinutes(mins) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function generateScheduleDefinition() {
+function generateScheduleDefinition(workMins = 90, breakMins = 30) {
+  const work = parseInt(workMins, 10) || 90;
+  const rest = parseInt(breakMins, 10) || 30;
+  const cycleDuration = work + rest;
+  const cyclesPerDay = Math.floor((24 * 60) / cycleDuration);
+
   const schedule = [];
   let currentMinutes = 0;
 
-  for (let cycle = 0; cycle < 12; cycle++) {
-    // Work Block (90 mins)
+  for (let cycle = 0; cycle < cyclesPerDay; cycle++) {
+    // Work Block
     const workStart = currentMinutes;
-    const workEnd = currentMinutes + 90;
+    const workEnd = currentMinutes + work;
     schedule.push({
       blockIndex: cycle * 2,
       type: 'work',
@@ -88,13 +95,13 @@ function generateScheduleDefinition() {
       endMin: workEnd,
       startTimeStr: formatMinutes(workStart),
       endTimeStr: formatMinutes(workEnd),
-      durationMins: 90
+      durationMins: work
     });
     currentMinutes = workEnd;
 
-    // Break Block (30 mins)
+    // Break Block
     const breakStart = currentMinutes;
-    const breakEnd = currentMinutes + 30;
+    const breakEnd = currentMinutes + rest;
     schedule.push({
       blockIndex: cycle * 2 + 1,
       type: 'break',
@@ -103,7 +110,7 @@ function generateScheduleDefinition() {
       endMin: breakEnd,
       startTimeStr: formatMinutes(breakStart),
       endTimeStr: formatMinutes(breakEnd),
-      durationMins: 30
+      durationMins: rest
     });
     currentMinutes = breakEnd;
   }
@@ -111,7 +118,7 @@ function generateScheduleDefinition() {
   return schedule;
 }
 
-const SCHEDULE_METADATA = generateScheduleDefinition();
+let SCHEDULE_METADATA = generateScheduleDefinition();
 
 function getDefaultBlockTitle(meta) {
   if (typeof I18N !== 'undefined') {

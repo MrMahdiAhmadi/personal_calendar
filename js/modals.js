@@ -130,10 +130,43 @@ function closeTagsModal() {
 }
 
 /* 4. Settings Modal */
+function updateSettingsCyclesHelper() {
+  const workInput = document.getElementById('settingsWorkBlockInput');
+  const breakInput = document.getElementById('settingsBreakBlockInput');
+  const helper = document.getElementById('settingsCyclesHelper');
+  if (!workInput || !breakInput || !helper) return;
+
+  const work = parseInt(workInput.value, 10);
+  const rest = parseInt(breakInput.value, 10);
+
+  if (!isNaN(work) && !isNaN(rest) && (work + rest) > 0) {
+    const cycleMins = work + rest;
+    const cycles = Math.floor((24 * 60) / cycleMins);
+    const totalMinutesCovered = cycles * cycleMins;
+    const hours = Math.floor(totalMinutesCovered / 60);
+    const mins = totalMinutesCovered % 60;
+    const hoursText = mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+
+    if (typeof I18N !== 'undefined' && I18N.t) {
+      helper.textContent = I18N.t('settings_cycles_helper', {
+        cycles: cycles,
+        total: cycles * 2,
+        hours: hoursText
+      });
+    } else {
+      helper.textContent = `≈ ${cycles} full cycles/day (${cycles * 2} blocks, ${hoursText} total)`;
+    }
+  } else {
+    helper.textContent = '';
+  }
+}
+
 function openSettingsModal() {
   const currentLang = (typeof AppSettings !== 'undefined') ? AppSettings.get('language') : I18N.currentLang;
   const currentCal = (typeof AppSettings !== 'undefined') ? AppSettings.get('calendarType') : 'gregorian';
   const currentTz = (typeof AppSettings !== 'undefined') ? AppSettings.get('timezone') : 'system';
+  const currentWork = (typeof AppSettings !== 'undefined') ? (AppSettings.get('workBlockMins') || 90) : 90;
+  const currentBreak = (typeof AppSettings !== 'undefined') ? (AppSettings.get('breakBlockMins') || 30) : 30;
 
   // Language radio
   const langRadio = document.querySelector(`input[name="settingsLanguage"][value="${currentLang}"]`);
@@ -142,6 +175,19 @@ function openSettingsModal() {
   // Calendar radio
   const calRadio = document.querySelector(`input[name="settingsCalendar"][value="${currentCal}"]`);
   if (calRadio) calRadio.checked = true;
+
+  // Block durations
+  const workInput = document.getElementById('settingsWorkBlockInput');
+  const breakInput = document.getElementById('settingsBreakBlockInput');
+  const durationError = document.getElementById('settingsDurationError');
+
+  if (workInput) workInput.value = currentWork;
+  if (breakInput) breakInput.value = currentBreak;
+  if (durationError) {
+    durationError.textContent = '';
+    durationError.classList.add('hidden');
+  }
+  updateSettingsCyclesHelper();
 
   // Timezone radio & input
   const isCustomTz = currentTz !== 'system';
@@ -207,10 +253,42 @@ function saveSettingsModalChanges() {
   const tzRadio = document.querySelector('input[name="settingsTimezoneType"]:checked');
   const customTzInput = document.getElementById('settingsCustomTzInput');
   const tzError = document.getElementById('settingsTzError');
+  const workInput = document.getElementById('settingsWorkBlockInput');
+  const breakInput = document.getElementById('settingsBreakBlockInput');
+  const durationError = document.getElementById('settingsDurationError');
 
   const newLang = langRadio ? langRadio.value : 'en';
   const newCal = calRadio ? calRadio.value : 'gregorian';
   const isCustomTz = tzRadio ? tzRadio.value === 'custom' : false;
+
+  // Validate block durations
+  const rawWork = workInput ? String(workInput.value).trim() : '';
+  const rawBreak = breakInput ? String(breakInput.value).trim() : '';
+  const workMins = parseInt(rawWork, 10);
+  const breakMins = parseInt(rawBreak, 10);
+
+  let durationErrorMessage = '';
+  if (isNaN(workMins) || workMins < 10 || workMins > 180 || workMins % 5 !== 0) {
+    durationErrorMessage = typeof I18N !== 'undefined'
+      ? I18N.t('settings_work_invalid')
+      : 'Work duration must be a multiple of 5 between 10 and 180 minutes.';
+  } else if (isNaN(breakMins) || breakMins < 5 || breakMins > 60 || breakMins % 5 !== 0) {
+    durationErrorMessage = typeof I18N !== 'undefined'
+      ? I18N.t('settings_break_invalid')
+      : 'Break duration must be a multiple of 5 between 5 and 60 minutes.';
+  }
+
+  if (durationErrorMessage) {
+    if (durationError) {
+      durationError.textContent = durationErrorMessage;
+      durationError.classList.remove('hidden');
+    }
+    return false;
+  }
+  if (durationError) {
+    durationError.textContent = '';
+    durationError.classList.add('hidden');
+  }
 
   let newTz = 'system';
   if (isCustomTz) {
@@ -226,9 +304,20 @@ function saveSettingsModalChanges() {
 
   if (tzError) tzError.classList.add('hidden');
 
+  AppSettings.set('workBlockMins', workMins);
+  AppSettings.set('breakBlockMins', breakMins);
   AppSettings.set('timezone', newTz);
   AppSettings.set('calendarType', newCal);
   AppSettings.set('language', newLang);
+
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && SupabaseSync.upsertSetting) {
+    SupabaseSync.upsertSetting('workBlockMins', workMins);
+    SupabaseSync.upsertSetting('breakBlockMins', breakMins);
+  }
+
+  if (typeof generateScheduleDefinition === 'function') {
+    SCHEDULE_METADATA = generateScheduleDefinition(workMins, breakMins);
+  }
 
   if (I18N.currentLang !== newLang) {
     I18N.setLanguage(newLang);

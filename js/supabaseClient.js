@@ -249,7 +249,49 @@ const SupabaseSync = {
     }
   },
 
-  // 4. Batch Upload Local Data into Supabase
+  // 4. Settings Operations
+  async fetchSettings() {
+    if (!this.isConfigured || !this.client) return null;
+    try {
+      this.setStatus('syncing');
+      const { data, error } = await this.client
+        .from('planner_settings')
+        .select('*');
+      this.setStatus('connected');
+      if (error) throw error;
+      const settingsMap = {};
+      if (data) {
+        data.forEach(row => {
+          settingsMap[row.key] = row.value;
+        });
+      }
+      return settingsMap;
+    } catch (err) {
+      console.warn('[Supabase] fetchSettings failed:', err);
+      this.setStatus('error');
+      return null;
+    }
+  },
+
+  async upsertSetting(key, value) {
+    if (!this.isConfigured || !this.client) return;
+    try {
+      this.setStatus('syncing');
+      const { error } = await this.client
+        .from('planner_settings')
+        .upsert({
+          key,
+          value,
+          updated_at: new Date().toISOString()
+        });
+      this.setStatus('connected');
+      if (error) console.error('[Supabase] upsertSetting error:', error);
+    } catch (e) {
+      this.setStatus('error');
+    }
+  },
+
+  // 5. Batch Upload Local Data into Supabase
   async migrateLocalDataToCloud(payload) {
     if (!this.isConfigured || !this.client) {
       throw new Error('Supabase client is not configured.');
@@ -270,7 +312,20 @@ const SupabaseSync = {
       if (taskErr) console.error('Migrate tasks error:', taskErr);
     }
 
-    // 3. Blocks
+    // 3. Settings (workBlockMins & breakBlockMins)
+    if (typeof AppSettings !== 'undefined') {
+      const workMins = AppSettings.get('workBlockMins');
+      const breakMins = AppSettings.get('breakBlockMins');
+      const settingsRows = [];
+      if (workMins !== undefined) settingsRows.push({ key: 'workBlockMins', value: workMins, updated_at: new Date().toISOString() });
+      if (breakMins !== undefined) settingsRows.push({ key: 'breakBlockMins', value: breakMins, updated_at: new Date().toISOString() });
+      if (settingsRows.length > 0) {
+        const { error: setErr } = await this.client.from('planner_settings').upsert(settingsRows);
+        if (setErr) console.error('Migrate settings error:', setErr);
+      }
+    }
+
+    // 4. Blocks
     if (payload.weeksData && typeof payload.weeksData === 'object') {
       const blockRows = [];
       Object.keys(payload.weeksData).forEach(wKey => {

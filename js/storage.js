@@ -136,13 +136,33 @@ async function syncFromSupabase() {
   if (!SupabaseSync.isConfigured) return;
 
   try {
-    const [cloudTags, cloudTasks, cloudBlocks] = await Promise.all([
+    const [cloudTags, cloudTasks, cloudBlocks, cloudSettings] = await Promise.all([
       SupabaseSync.fetchTags(),
       SupabaseSync.fetchTasks(),
-      SupabaseSync.fetchAllBlocks()
+      SupabaseSync.fetchAllBlocks(),
+      SupabaseSync.fetchSettings ? SupabaseSync.fetchSettings() : Promise.resolve(null)
     ]);
 
     let changed = false;
+
+    if (cloudSettings && typeof cloudSettings === 'object') {
+      let scheduleNeedsRebuild = false;
+      if (cloudSettings.workBlockMins !== undefined) {
+        AppSettings.set('workBlockMins', cloudSettings.workBlockMins);
+        scheduleNeedsRebuild = true;
+      }
+      if (cloudSettings.breakBlockMins !== undefined) {
+        AppSettings.set('breakBlockMins', cloudSettings.breakBlockMins);
+        scheduleNeedsRebuild = true;
+      }
+      if (scheduleNeedsRebuild && typeof generateScheduleDefinition === 'function') {
+        SCHEDULE_METADATA = generateScheduleDefinition(
+          AppSettings.get('workBlockMins'),
+          AppSettings.get('breakBlockMins')
+        );
+        changed = true;
+      }
+    }
 
     if (cloudTags && cloudTags.length > 0) {
       customTags = cloudTags;
@@ -242,9 +262,11 @@ function updateCompletionCounters() {
 
   let dayCompleted = 0;
   let weekCompleted = 0;
+  const blocksPerDay = typeof SCHEDULE_METADATA !== 'undefined' ? SCHEDULE_METADATA.length : 24;
+  const totalWeekBlocks = blocksPerDay * 7;
 
   DAYS_OF_WEEK.forEach(d => {
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < blocksPerDay; i++) {
       const item = weeksData[curWeekKey][d.id][i];
       if (item && item.status === 'completed') {
         weekCompleted++;
@@ -257,8 +279,8 @@ function updateCompletionCounters() {
 
   const dayCounter = document.getElementById('dayCompletedCounter');
   const weekCounter = document.getElementById('weekCompletedCounter');
-  if (dayCounter) dayCounter.textContent = `${dayCompleted} / 24`;
-  if (weekCounter) weekCounter.textContent = `${weekCompleted} / 168`;
+  if (dayCounter) dayCounter.textContent = `${dayCompleted} / ${blocksPerDay}`;
+  if (weekCounter) weekCounter.textContent = `${weekCompleted} / ${totalWeekBlocks}`;
 }
 
 function getTagById(tagId) {
