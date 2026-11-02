@@ -1,0 +1,54 @@
+/* =====================================================================
+   Custom Styles & Scrollbar for Weekly Planner
+   ===================================================================== */
+
+::-webkit-scrollbar {
+  height: 7px;
+  width: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(100, 116, 139, 0.1);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.55);
+}
+
+.pulse-ring {
+  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+  animation: pulse-ring 2s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+@keyframes pulse-ring {
+  to {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+  }
+}
+
+.weekly-scroll-container {
+  scrollbar-gutter: stable;
+}
+
+.break-block-compact {
+  opacity: 0.82;
+  font-size: 0.72rem;
+}
+
+.break-block-compact:hover {
+  opacity: 1;
+}
+
+/* Supabase Connection Badge Animation */
+.status-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}

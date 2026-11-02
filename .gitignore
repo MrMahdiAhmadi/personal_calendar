@@ -1,0 +1,14 @@
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Local environment & MCP configs
+.env
+.env.*
+.mcp.json
+
+# AI Agent directories and skill caches
+.agents/
+.claude/
+agent/
+skills-lock.json
