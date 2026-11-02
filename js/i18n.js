@@ -205,7 +205,8 @@ const I18N = {
       toast_cloud_uploading: "Uploading local data to Supabase...",
       toast_cloud_upload_done: "All data successfully uploaded to Supabase! 🚀",
       toast_cloud_saved: "Settings saved. Connecting...",
-      toast_cloud_offline: "Settings saved (offline mode)."
+      toast_cloud_offline: "Settings saved (offline mode).",
+      toast_settings_saved: "Settings applied and saved."
     },
 
     fa: {
@@ -406,7 +407,8 @@ const I18N = {
       toast_cloud_uploading: "در حال انتقال داده‌های محلی به سوپابیس...",
       toast_cloud_upload_done: "تمام اطلاعات با موفقیت به سوپابیس منتقل شدند! 🚀",
       toast_cloud_saved: "تنظیمات ذخیره شد. در حال اتصال...",
-      toast_cloud_offline: "تنظیمات ذخیره شد (حالت آفلاین)."
+      toast_cloud_offline: "تنظیمات ذخیره شد (حالت آفلاین).",
+      toast_settings_saved: "تنظیمات با موفقیت اعمال و ذخیره شد."
     }
   },
 

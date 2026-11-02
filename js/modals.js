@@ -336,9 +336,16 @@ function saveSettingsModalChanges() {
   AppSettings.set('calendarType', newCal);
   AppSettings.set('language', newLang);
 
-  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && SupabaseSync.upsertSetting) {
-    SupabaseSync.upsertSetting('workBlockMins', workMins);
-    SupabaseSync.upsertSetting('breakBlockMins', breakMins);
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+    if (typeof SupabaseSync.upsertSettings === 'function') {
+      SupabaseSync.upsertSettings({
+        workBlockMins: workMins,
+        breakBlockMins: breakMins
+      });
+    } else if (typeof SupabaseSync.upsertSetting === 'function') {
+      SupabaseSync.upsertSetting('workBlockMins', workMins);
+      SupabaseSync.upsertSetting('breakBlockMins', breakMins);
+    }
   }
 
   if (typeof generateScheduleDefinition === 'function') {
@@ -354,6 +361,7 @@ function saveSettingsModalChanges() {
   }
 
   closeSettingsModal();
+  showToast(I18N.t('toast_settings_saved'));
   return true;
 }
 
@@ -497,8 +505,12 @@ function closeConfirmDialog() {
 /* 6. Backup, Export & Import */
 function getFullBackupPayload() {
   return {
-    version: '3.0',
+    version: '3.1',
     exportedAt: new Date().toISOString(),
+    settings: {
+      workBlockMins: typeof AppSettings !== 'undefined' ? AppSettings.get('workBlockMins') : 90,
+      breakBlockMins: typeof AppSettings !== 'undefined' ? AppSettings.get('breakBlockMins') : 30
+    },
     customTags,
     sharedTasksBank,
     weeksData
@@ -514,6 +526,19 @@ function applyFullBackupPayload(parsed) {
   if (Array.isArray(parsed.customTags)) customTags = parsed.customTags;
   if (Array.isArray(parsed.sharedTasksBank)) sharedTasksBank = parsed.sharedTasksBank;
 
+  if (parsed.settings && typeof parsed.settings === 'object' && typeof AppSettings !== 'undefined') {
+    const work = parseInt(parsed.settings.workBlockMins, 10);
+    const rest = parseInt(parsed.settings.breakBlockMins, 10);
+    if (!isNaN(work) && work >= 10 && work <= 180) AppSettings.set('workBlockMins', work);
+    if (!isNaN(rest) && rest >= 5 && rest <= 60) AppSettings.set('breakBlockMins', rest);
+    if (typeof generateScheduleDefinition === 'function') {
+      SCHEDULE_METADATA = generateScheduleDefinition(
+        AppSettings.get('workBlockMins'),
+        AppSettings.get('breakBlockMins')
+      );
+    }
+  }
+
   saveAppData();
   saveTagsData();
   saveTasksBank();
@@ -524,6 +549,7 @@ function applyFullBackupPayload(parsed) {
 
   renderDayTabs();
   renderCurrentView();
+  updateLiveIranTicker();
   showToast(I18N.t('toast_backup_restored'));
   return true;
 }

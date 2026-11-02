@@ -65,3 +65,7 @@ npx serve .
 
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
+
+---
+
+Personal project (vibe-coded). Made it public just to host on GitHub Pages.
