@@ -15,7 +15,8 @@ const CONFIG = {
   THEME_KEY: 'tb_theme_preference',
   HIDE_BREAKS_KEY: 'tb_hide_breaks_preference',
   SUPABASE_CONFIG_KEY: 'tb_supabase_config',
-  SETTINGS_KEY: 'tb_app_settings_v1'
+  SETTINGS_KEY: 'tb_app_settings_v1',
+  TEMPLATES_KEY: 'tb_weekly_templates_v1'
 };
 
 const DEFAULT_SETTINGS = {

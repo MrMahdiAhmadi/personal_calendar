@@ -86,6 +86,223 @@ function saveBlockModalChanges() {
   showToast(I18N.t('toast_block_saved'));
 }
 
+/* 1.5 Weekly Routine Repetition & Templates Modal Operations */
+function copyPreviousWeekRoutine() {
+  const currentWeekKey = getWeekKey(weekOffset);
+  const prevWeekKey = getWeekKey(weekOffset - 1);
+
+  const prevRoutine = extractRoutineFromWeek(prevWeekKey);
+  if (!prevRoutine || prevRoutine.totalBlocks === 0) {
+    showToast(I18N.t('toast_prev_week_empty'));
+    return;
+  }
+
+  const currentSummary = getWeekDataSummary(currentWeekKey);
+
+  const executeCopy = () => {
+    applyRoutineToWeek(currentWeekKey, prevRoutine.blocksData);
+    renderCurrentView();
+    showToast(I18N.t('toast_prev_week_copied'));
+  };
+
+  if (currentSummary.count > 0) {
+    showConfirmDialog(
+      I18N.t('confirm_overwrite_copy_title'),
+      I18N.t('confirm_overwrite_copy_msg', { count: currentSummary.count }),
+      executeCopy
+    );
+  } else {
+    executeCopy();
+  }
+}
+
+function openTemplatesModal() {
+  const currentWeekKey = getWeekKey(weekOffset);
+  const currentSummary = getWeekDataSummary(currentWeekKey);
+  const metaEl = document.getElementById('currentWeekTemplateMeta');
+  if (metaEl) {
+    metaEl.textContent = `${currentSummary.count} blocks`;
+  }
+  const inputEl = document.getElementById('newTemplateNameInput');
+  if (inputEl) inputEl.value = '';
+
+  renderTemplatesList();
+
+  const modal = document.getElementById('templatesModal');
+  const box = document.getElementById('templatesModalBox');
+  if (!modal || !box) return;
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    modal.classList.remove('opacity-0');
+    box.classList.remove('scale-95', 'translate-y-6');
+    box.classList.add('scale-100', 'translate-y-0');
+  }, 10);
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function closeTemplatesModal() {
+  const modal = document.getElementById('templatesModal');
+  const box = document.getElementById('templatesModalBox');
+  if (!modal || !box) return;
+  modal.classList.add('opacity-0');
+  box.classList.remove('scale-100', 'translate-y-0');
+  box.classList.add('scale-95', 'translate-y-6');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+  }, 200);
+}
+
+function saveCurrentWeekAsTemplate() {
+  const inputEl = document.getElementById('newTemplateNameInput');
+  const name = inputEl ? inputEl.value.trim() : '';
+
+  if (!name) {
+    showToast(I18N.t('toast_template_name_required'));
+    return;
+  }
+
+  const currentWeekKey = getWeekKey(weekOffset);
+  const routine = extractRoutineFromWeek(currentWeekKey);
+
+  if (!routine || routine.totalBlocks === 0) {
+    showToast(I18N.t('toast_curr_week_empty'));
+    return;
+  }
+
+  const newTemplate = {
+    id: 'tmpl-' + Date.now(),
+    name: name,
+    createdAt: new Date().toISOString(),
+    totalBlocks: routine.totalBlocks,
+    tagIds: routine.tagIds,
+    blocksData: routine.blocksData
+  };
+
+  weeklyTemplates.unshift(newTemplate);
+  saveTemplatesData();
+
+  if (inputEl) inputEl.value = '';
+  renderTemplatesList();
+  showToast(I18N.t('toast_template_saved', { name: escapeHtml(name) }));
+}
+
+function applyTemplateToCurrentWeek(templateId) {
+  const template = weeklyTemplates.find(t => t.id === templateId);
+  if (!template) return;
+
+  const currentWeekKey = getWeekKey(weekOffset);
+  const currentSummary = getWeekDataSummary(currentWeekKey);
+
+  const executeApply = () => {
+    applyRoutineToWeek(currentWeekKey, template.blocksData);
+    renderCurrentView();
+    closeTemplatesModal();
+    showToast(I18N.t('toast_template_applied', { name: escapeHtml(template.name) }));
+  };
+
+  if (currentSummary.count > 0) {
+    showConfirmDialog(
+      I18N.t('confirm_overwrite_template_title'),
+      I18N.t('confirm_overwrite_template_msg', { count: currentSummary.count, name: escapeHtml(template.name) }),
+      executeApply
+    );
+  } else {
+    executeApply();
+  }
+}
+
+function promptDeleteTemplate(templateId) {
+  const template = weeklyTemplates.find(t => t.id === templateId);
+  if (!template) return;
+
+  showConfirmDialog(
+    I18N.t('confirm_delete_template_title'),
+    I18N.t('confirm_delete_template_msg', { name: escapeHtml(template.name) }),
+    () => {
+      weeklyTemplates = weeklyTemplates.filter(t => t.id !== templateId);
+      saveTemplatesData();
+      renderTemplatesList();
+      showToast(I18N.t('toast_template_deleted'));
+    }
+  );
+}
+
+function renderTemplatesList() {
+  const container = document.getElementById('templatesListContainer');
+  const countEl = document.getElementById('savedTemplatesCount');
+  if (!container) return;
+
+  container.innerHTML = '';
+  if (countEl) {
+    countEl.textContent = `${weeklyTemplates.length} ${I18N.t('templates_btn').toLowerCase()}`;
+  }
+
+  if (weeklyTemplates.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-800/20 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+        <i data-lucide="layers" class="w-8 h-8 mx-auto mb-2 opacity-50 text-violet-400"></i>
+        <p class="text-xs">${I18N.t('no_templates_msg')}</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
+
+  weeklyTemplates.forEach(tmpl => {
+    const card = document.createElement('div');
+    card.className = 'p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs flex flex-col gap-2.5 transition hover:border-violet-300 dark:hover:border-violet-800';
+
+    const dateStr = tmpl.createdAt ? tmpl.createdAt.slice(0, 10) : '';
+
+    // Render tag chips
+    let tagsHtml = '';
+    if (Array.isArray(tmpl.tagIds)) {
+      tmpl.tagIds.slice(0, 4).forEach(tid => {
+        const tag = getTagById(tid);
+        tagsHtml += `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium" style="background-color: ${tag.color}1a; color: ${tag.color};">
+            <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${tag.color}"></span>
+            <span>${escapeHtml(tag.name)}</span>
+          </span>
+        `;
+      });
+      if (tmpl.tagIds.length > 4) {
+        tagsHtml += `<span class="text-[10px] text-slate-400 self-center">+${tmpl.tagIds.length - 4}</span>`;
+      }
+    }
+
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+            <i data-lucide="bookmark" class="w-3.5 h-3.5 text-violet-500 flex-shrink-0"></i>
+            <span>${escapeHtml(tmpl.name)}</span>
+          </h4>
+          <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+            <span>${I18N.t('template_blocks_count', { count: tmpl.totalBlocks || 0 })}</span>
+            <span>•</span>
+            <span>${I18N.t('template_created_at', { date: dateStr })}</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button onclick="promptDeleteTemplate('${tmpl.id}')" class="p-1.5 rounded-lg hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 text-slate-400 transition" title="${I18N.t('delete_template_btn')}">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+          <button onclick="applyTemplateToCurrentWeek('${tmpl.id}')" class="flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-semibold shadow-sm transition">
+            <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5"></i>
+            <span>${I18N.t('apply_template_btn')}</span>
+          </button>
+        </div>
+      </div>
+      ${tagsHtml ? `<div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-100 dark:border-slate-800/60">${tagsHtml}</div>` : ''}
+    `;
+
+    container.appendChild(card);
+  });
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
 /* 2. Central Tasks Hub Modal */
 function openTasksHubModal() {
   renderTasksHubFilterTabs();
@@ -583,7 +800,7 @@ function closeConfirmDialog() {
 /* 6. Backup, Export & Import */
 function getFullBackupPayload() {
   return {
-    version: '3.1',
+    version: '3.2',
     exportedAt: new Date().toISOString(),
     settings: {
       workBlockMins: typeof AppSettings !== 'undefined' ? AppSettings.get('workBlockMins') : 90,
@@ -593,6 +810,7 @@ function getFullBackupPayload() {
     },
     customTags,
     sharedTasksBank,
+    weeklyTemplates,
     weeksData
   };
 }
@@ -605,6 +823,10 @@ function applyFullBackupPayload(parsed) {
   weeksData = parsed.weeksData;
   if (Array.isArray(parsed.customTags)) customTags = parsed.customTags;
   if (Array.isArray(parsed.sharedTasksBank)) sharedTasksBank = parsed.sharedTasksBank;
+  if (Array.isArray(parsed.weeklyTemplates)) {
+    weeklyTemplates = parsed.weeklyTemplates;
+    saveTemplatesData();
+  }
 
   if (parsed.settings && typeof parsed.settings === 'object' && typeof AppSettings !== 'undefined') {
     const work = parseInt(parsed.settings.workBlockMins, 10);

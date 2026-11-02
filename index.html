@@ -210,7 +210,7 @@
       <!-- Top Row: Week Navigator & View Modes -->
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
         <!-- Week Controls -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <button id="prevWeekBtn" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Previous Week" data-i18n-title="prev_week">
             <i data-lucide="chevron-left" class="w-4 h-4"></i>
           </button>
@@ -223,6 +223,18 @@
           </button>
           <button id="todayWeekBtn" class="text-xs px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition" data-i18n="this_week_btn">
             This Week
+          </button>
+
+          <div class="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-0.5 hidden sm:block"></div>
+
+          <!-- Smart Routine Actions: Copy Previous Week & Templates -->
+          <button id="copyPrevWeekBtn" class="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/50 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 text-xs font-semibold transition" title="Copy routine from previous week" data-i18n-title="copy_prev_week_title">
+            <i data-lucide="copy-check" class="w-3.5 h-3.5 text-violet-500"></i>
+            <span data-i18n="copy_prev_week_btn">Copy From Last Week</span>
+          </button>
+          <button id="openTemplatesBtn" class="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-medium transition" title="Weekly Routine Templates" data-i18n-title="templates_btn_title">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span data-i18n="templates_btn">Templates</span>
           </button>
         </div>
 
@@ -894,6 +906,69 @@
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 text-white dark:bg-white dark:text-slate-950 px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2">
     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 dark:text-emerald-600"></i>
     <span id="toastMsg">Operation successful</span>
+  </div>
+
+  <!-- 9. Weekly Routine Templates Modal -->
+  <div id="templatesModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-xl shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] flex flex-col" id="templatesModalBox">
+      <!-- Sheet Pull Bar Indicator on Mobile -->
+      <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
+
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-violet-100 dark:bg-violet-950/70 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="templates_modal_title">Weekly Routine Templates</h3>
+            <p class="text-[11px] text-slate-400" data-i18n="templates_modal_sub">Save and reuse full weekly structures for work, study, or travel</p>
+          </div>
+        </div>
+        <button id="closeTemplatesModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="mt-4 flex flex-col gap-4 overflow-y-auto flex-1 pr-1">
+        <!-- Save Current Week as Template Card -->
+        <div class="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex-shrink-0">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <i data-lucide="save" class="w-3.5 h-3.5 text-violet-500"></i>
+              <span data-i18n="save_current_week_template_label">Save Current Week as Template</span>
+            </span>
+            <span id="currentWeekTemplateMeta" class="text-[11px] text-slate-400 font-mono">0 blocks</span>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="newTemplateNameInput" placeholder="e.g. Standard Work Week, Exam Prep..." data-i18n-placeholder="template_name_ph" class="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <button id="saveWeekAsTemplateBtn" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 flex-shrink-0 min-h-[38px]">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span data-i18n="save_template_btn">Save Template</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved Templates Section Header -->
+        <div class="flex items-center justify-between text-xs text-slate-500 flex-shrink-0 pt-1">
+          <span class="font-semibold text-slate-700 dark:text-slate-300" data-i18n="saved_templates_label">Saved Templates</span>
+          <span id="savedTemplatesCount" class="font-mono text-[11px]">0 templates</span>
+        </div>
+
+        <!-- Templates List Container -->
+        <div id="templatesListContainer" class="space-y-2.5 min-h-[160px]">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end flex-shrink-0">
+        <button id="doneTemplatesModalBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition min-h-[40px]" data-i18n="hub_done_btn">
+          Done
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Application Modules -->
