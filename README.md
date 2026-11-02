@@ -1,5 +1,5 @@
 # 24-Hour Time Blocking Weekly Planner (Iran Timezone) ⏱️
-> A modern, responsive, ultradian-rhythm weekly time blocking planner with shared category task banks and optional Supabase cloud synchronization.
+> A modern, responsive, ultradian-rhythm weekly time blocking planner with shared category task banks, integrated Pomodoro timer, PWA offline support, and optional Supabase cloud synchronization.
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-2ea44f?style=for-the-badge&logo=github)](https://mrmahdiahmadi.github.io/personal_calendar/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
@@ -17,11 +17,14 @@ Access the live application directly in your browser without any setup:
 👉 **[https://mrmahdiahmadi.github.io/personal_calendar/](https://mrmahdiahmadi.github.io/personal_calendar/)**
 
 ### Overview
-This planner is built around **ultradian cycles**: 90 minutes of focused deep work followed by 30 minutes of rest and recovery across a 24-hour daily timeline (12 full cycles per day, Saturday through Friday). It automatically tracks live time in the official Iran timezone (`Asia/Tehran`), calculates current active blocks, and helps balance work sprints with timely breaks.
+This planner is built around focused work sprints and timely breaks across a 24-hour daily timeline (Saturday through Friday), defaulting to **ultradian cycles** (90 minutes work + 30 minutes rest). It automatically tracks live time in the official Iran timezone (`Asia/Tehran`), highlights active blocks, provides an integrated Pomodoro timer with audio alerts, and operates entirely offline as an installable PWA.
 
 ### Key Features
 - **🌐 Bilingual UI:** Instant switching between English (LTR) and Persian (RTL) with localized dates and numbers.
-- **🕒 Accurate Iran Time Engine (`Asia/Tehran`):** Live ticker, Persian/Gregorian date display, and pulse indicator highlighting the active 90m work or 30m break block.
+- **🕒 Accurate Iran Time Engine (`Asia/Tehran`):** Live ticker, Persian/Gregorian date display, and pulse indicator highlighting the active work or break block.
+- **⚙️ Customizable Block Durations:** Adjust work (10–180 min) and break (5–60 min) lengths in Settings with automatic daily cycle calculation.
+- **⏱️ Integrated Pomodoro Timer:** Built-in timer inside block modals with customizable work/break durations, progress indicator, and audio chimes.
+- **📱 PWA & Offline Support:** Installable as a Progressive Web App (PWA) on desktop and mobile with service worker caching and live offline status indicator.
 - **🔄 3 Flexible Views:**
   - **Weekly Matrix:** High-density 7-day overview with time columns, completion status, and smooth scrolling.
   - **Daily Vertical:** Timeline view detailing goals, tags, notes, and task checklists.
@@ -57,11 +60,14 @@ npx serve .
 👉 **[https://mrmahdiahmadi.github.io/personal_calendar/](https://mrmahdiahmadi.github.io/personal_calendar/)**
 
 ### معرفی
-این برنامه بر پایه **سیکل‌های ریتم اولترادیان** (۹۰ دقیقه کار عمیق و متمرکز + ۳۰ دقیقه استراحت و تنفس) برای کل ۲۴ ساعت شبانه‌روز (۱۲ چرخه روزانه) طراحی شده است. برنامه با تایم‌زون رسمی ایران (`Asia/Tehran`) هماهنگ بوده و به صورت خودکار بلاک فعال در هر ساعت از شبانه‌روز را مشخص می‌کند.
+این برنامه برای زمان‌بندی و مدیریت ۲۴ ساعته شبانه‌روز (شنبه تا جمعه) بر پایه چرخه‌های متناوب کار متمرکز و استراحت (به‌صورت پیش‌فرض **ریتم اولترادیان**: ۹۰ دقیقه کار عمیق + ۳۰ دقیقه استراحت) طراحی شده است. برنامه با ساعت رسمی ایران (`Asia/Tehran`) هماهنگ بوده، بلاک فعال جاری را مشخص می‌کند و امکاناتی نظیر تایمر پومودورو، شخصی‌سازی زمان چرخه‌ها و کارکرد آفلاین در قالب PWA را در اختیارتان می‌گذارد.
 
 ### قابلیت‌های اصلی
-- **🌐 پشتیبانی دو زبانه (انگلیسی و فارسی):** قابلیت تغییر آنی زبان و چیدمان (RTL و LTR).
-- **🕒 موتور زمان زنده ایران:** نمایش دقیق ساعت و تقویم خورشیدی و میلادی با افکت ضربان روی بلاک فعال جاری.
+- **🌐 پشتیبانی دو زبانه (انگلیسی و فارسی):** قابلیت تغییر آنی زبان و چیدمان (RTL و LTR) به همراه تقویم شمسی و میلادی.
+- **🕒 موتور زمان زنده ایران:** نمایش دقیق ساعت رسمی و افکت ضربان روی بلاک فعال جاری.
+- **⚙️ زمان‌بندی قابل شخصی‌سازی:** امکان تنظیم مدت زمان کار (۱۰ تا ۱۸۰ دقیقه) و استراحت (۵ تا ۶۰ دقیقه) در تنظیمات با محاسبه و اعمال خودکار چرخه‌ها.
+- **⏱️ تایمر پومودورو یکپارچه:** تایمر تمرکز درون مودال ویرایش هر بلاک با هشدار صوتی و قابلیت تنظیم زمان کار و استراحت.
+- **📱 پشتیبانی از PWA و حالت آفلاین:** قابلیت نصب به عنوان اپلیکیشن تحت وب روی موبایل و دسکتاپ، کش کشیدن منابع با Service Worker و نشانگر وضعیت اتصال.
 - **🔄 ۳ نمای نمایش متنوع:** ماتریس هفتگی کامل (شنبه تا جمعه)، نمای روزانه عمودی و نمای کارت‌های افقی.
 - **🏷️ برچسب‌های رنگی حوزه‌ها:** دسته‌بندی زمان به حوزه‌های مختلف (کار و پروژه، مطالعه و یادگیری، سلامت و ورزش، استراحت، امور عمومی و ...) با قابلیت شخصی‌سازی رنگ‌ها.
 - **📋 بانک تسک‌های مشترک:** تعریف تسک برای هر حوزه و انتساب سریع آن به صورت چک‌لیست در بلاک‌های مرتبط.
