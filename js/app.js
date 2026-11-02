@@ -8,6 +8,19 @@ window.addEventListener('DOMContentLoaded', () => {
     AppSettings.load();
   }
 
+  // Service Worker Registration for PWA / Offline Support
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => {
+          console.log('[SW] Service Worker registered with scope:', reg.scope);
+        })
+        .catch((err) => {
+          console.warn('[SW] Service Worker registration failed:', err);
+        });
+    });
+  }
+
   // 1. Initialize Internationalization (Default: English)
   I18N.init();
 
@@ -45,6 +58,26 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // 5. Live Iran Clock
   setInterval(updateLiveIranTicker, 1000);
+
+  // Network Online / Offline Status Listener
+  function updateNetworkStatus() {
+    const offlineBadge = document.getElementById('offlineStatusBadge');
+    if (!offlineBadge) return;
+    if (navigator.onLine) {
+      offlineBadge.classList.add('hidden');
+      offlineBadge.classList.remove('inline-flex');
+    } else {
+      offlineBadge.classList.remove('hidden');
+      offlineBadge.classList.add('inline-flex');
+      if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons();
+      }
+    }
+  }
+
+  window.addEventListener('online', updateNetworkStatus);
+  window.addEventListener('offline', updateNetworkStatus);
+  updateNetworkStatus();
 
   // 6. Settings Modal Listeners
   const settingsBtn = document.getElementById('settingsBtn');
