@@ -9,7 +9,9 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof generateScheduleDefinition === 'function') {
       SCHEDULE_METADATA = generateScheduleDefinition(
         AppSettings.get('workBlockMins'),
-        AppSettings.get('breakBlockMins')
+        AppSettings.get('breakBlockMins'),
+        AppSettings.get('bedtime'),
+        AppSettings.get('wakeTime')
       );
     }
   }
@@ -143,11 +145,24 @@ window.addEventListener('DOMContentLoaded', () => {
   const saveSettingsBtn = document.getElementById('saveSettingsBtn');
   if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', saveSettingsModalChanges);
 
-  // Block duration live calculation listeners inside settings modal
+  // Block duration and sleep time live calculation listeners inside settings modal
   const workBlockInput = document.getElementById('settingsWorkBlockInput');
   const breakBlockInput = document.getElementById('settingsBreakBlockInput');
+  const bedtimeInput = document.getElementById('settingsBedtimeInput');
+  const wakeTimeInput = document.getElementById('settingsWakeTimeInput');
+
   if (workBlockInput) {
     workBlockInput.addEventListener('input', () => {
+      if (typeof updateSettingsCyclesHelper === 'function') updateSettingsCyclesHelper();
+    });
+  }
+  if (bedtimeInput) {
+    bedtimeInput.addEventListener('input', () => {
+      if (typeof updateSettingsCyclesHelper === 'function') updateSettingsCyclesHelper();
+    });
+  }
+  if (wakeTimeInput) {
+    wakeTimeInput.addEventListener('input', () => {
       if (typeof updateSettingsCyclesHelper === 'function') updateSettingsCyclesHelper();
     });
   }

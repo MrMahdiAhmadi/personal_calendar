@@ -110,10 +110,21 @@ function updateLiveIranTicker() {
   if (dateEl) dateEl.textContent = isPersian ? currentTime.persianDateStr : currentTime.gregorianDateStr;
 
   let activeIndex = -1;
+  const currentMin = currentTime.totalMinutesOfDay;
+
   for (const meta of SCHEDULE_METADATA) {
-    if (currentTime.totalMinutesOfDay >= meta.startMin && currentTime.totalMinutesOfDay < meta.endMin) {
-      activeIndex = meta.blockIndex;
-      break;
+    if (meta.startMin < meta.endMin) {
+      // Normal within-day range
+      if (currentMin >= meta.startMin && currentMin < meta.endMin) {
+        activeIndex = meta.blockIndex;
+        break;
+      }
+    } else {
+      // Crosses midnight (e.g. 23:30 to 07:30)
+      if (currentMin >= meta.startMin || currentMin < meta.endMin) {
+        activeIndex = meta.blockIndex;
+        break;
+      }
     }
   }
 
@@ -122,17 +133,41 @@ function updateLiveIranTicker() {
     if (activeIndex !== -1) {
       const meta = SCHEDULE_METADATA[activeIndex];
       const isWork = meta.type === 'work';
+      const isSleep = meta.type === 'sleep';
+      const isWinddown = meta.type === 'winddown';
       const todayDayObj = DAYS_OF_WEEK.find(d => d.id === currentTime.todayIranDayId);
 
       const curWeekKey = getWeekKey(0);
       const dayData = (weeksData[curWeekKey] && weeksData[curWeekKey][currentTime.todayIranDayId]) || {};
       const blockData = dayData[activeIndex] || {};
       const title = blockData.title || getDefaultBlockTitle(meta);
-      const tagSuffix = isWork ? I18N.t('work_tag_suffix') : I18N.t('break_tag_suffix');
+
+      let tagSuffix = '';
+      let badgeStyle = 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300';
+      let iconHtml = '';
+
+      if (isSleep) {
+        tagSuffix = I18N.t('sleep_tag_suffix');
+        badgeStyle = 'bg-slate-800 text-indigo-200 border border-indigo-700/50';
+        iconHtml = '<i data-lucide="moon" class="w-3 h-3 text-indigo-300"></i>';
+      } else if (isWinddown) {
+        tagSuffix = I18N.t('winddown_tag_suffix');
+        badgeStyle = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
+        iconHtml = '<i data-lucide="sunset" class="w-3 h-3 text-amber-500"></i>';
+      } else if (isWork) {
+        tagSuffix = I18N.t('work_tag_suffix', { mins: meta.durationMins });
+        badgeStyle = 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300';
+        iconHtml = '<i data-lucide="briefcase" class="w-3 h-3 text-indigo-500"></i>';
+      } else {
+        tagSuffix = I18N.t('break_tag_suffix', { mins: meta.durationMins });
+        badgeStyle = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300';
+        iconHtml = '<i data-lucide="coffee" class="w-3 h-3 text-emerald-500"></i>';
+      }
 
       activeBadge.innerHTML = `
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${isWork ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'}">
-          ${todayDayObj.name} | ${meta.startTimeStr} - ${meta.endTimeStr}
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${badgeStyle}">
+          ${iconHtml}
+          <span>${todayDayObj.name} | ${meta.startTimeStr} - ${meta.endTimeStr}</span>
         </span>
         <span class="truncate max-w-[220px] font-semibold">${escapeHtml(title)}</span>
         <span class="text-xs text-slate-400 font-normal">(${tagSuffix})</span>
