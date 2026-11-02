@@ -59,6 +59,9 @@ function closeEditModal() {
   setTimeout(() => {
     modal.classList.add('hidden');
     activeModalTarget = null;
+    if (typeof pomodoroUpdateFloatingBar === 'function') {
+      pomodoroUpdateFloatingBar();
+    }
   }, 200);
 }
 
