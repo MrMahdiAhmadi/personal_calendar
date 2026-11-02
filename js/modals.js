@@ -33,9 +33,17 @@ function openEditModal(weekKey, dayId, blockIndex) {
   }, 10);
 
   if (window.lucide) window.lucide.createIcons();
+
+  if (typeof pomodoroInit === 'function') {
+    pomodoroInit();
+  }
 }
 
 function closeEditModal() {
+  if (typeof pomodoroCleanup === 'function') {
+    pomodoroCleanup();
+  }
+
   const modal = document.getElementById('blockModal');
   const box = document.getElementById('modalBox');
   modal.classList.add('opacity-0');
