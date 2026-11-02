@@ -1,5 +1,5 @@
 /* =====================================================================
-   Pomodoro Timer Module for Block Edit Modal
+   Pomodoro Timer Module (Persistent Floating Timer, Notification & Calendar Sync)
    ===================================================================== */
 
 let pomodoroState = {
@@ -9,13 +9,78 @@ let pomodoroState = {
   secondsLeft: 25 * 60,
   intervalId: null,
   isCollapsed: false,
+  // The block target to which this timer belongs
+  activeTarget: null,   // { weekKey, dayId, blockIndex }
   settings: {
     focusMinutes: 25,
     shortBreakMinutes: 5,
-    longBreakMinutes: 15,
-    sessionsUntilLong: 4
+    longBreakMinutes: 30, // Default synced with schedule break block duration
+    sessionsUntilLong: 3  // 3 * 25m = 75m focus + 2 * 5m short = 85m ~ 90m work block
   }
 };
+
+let defaultDocumentTitle = document.title || "24-Hour Time Blocking Planner";
+
+/**
+ * Returns the corresponding calendar break block metadata for a given target work block.
+ */
+function pomodoroGetNextCalendarBreak(target) {
+  if (!target || typeof SCHEDULE_METADATA === 'undefined') return null;
+  const currentMeta = SCHEDULE_METADATA[target.blockIndex];
+  if (!currentMeta) return null;
+
+  // If this is a work block, look for the next break block
+  if (currentMeta.type === 'work') {
+    // Next block index in cyclic/linear schedule
+    const nextIdx = target.blockIndex + 1;
+    if (nextIdx < SCHEDULE_METADATA.length && SCHEDULE_METADATA[nextIdx].type === 'break') {
+      return {
+        blockIndex: nextIdx,
+        meta: SCHEDULE_METADATA[nextIdx],
+        durationMins: SCHEDULE_METADATA[nextIdx].durationMins
+      };
+    }
+  }
+
+  // Fallback to configured break block minutes
+  const breakMins = (typeof AppSettings !== 'undefined' && AppSettings.get)
+    ? (AppSettings.get('breakBlockMins') || 30)
+    : 30;
+
+  return {
+    blockIndex: target.blockIndex + 1,
+    meta: null,
+    durationMins: breakMins
+  };
+}
+
+/**
+ * Calculates long break minutes and sessions count dynamically based on the target block.
+ */
+function pomodoroSyncSettingsForTarget(target) {
+  if (!target || typeof SCHEDULE_METADATA === 'undefined') return;
+  const meta = SCHEDULE_METADATA[target.blockIndex];
+  if (!meta) return;
+
+  const workDuration = meta.durationMins || 90;
+  // If work block is 90 min: 3 sessions of 25m (75m work + 2*5m break = 85m ~ 90m)
+  // If 50-60 min: 2 sessions
+  // If <= 30 min: 1 session
+  if (workDuration <= 30) {
+    pomodoroState.settings.sessionsUntilLong = 1;
+  } else if (workDuration <= 60) {
+    pomodoroState.settings.sessionsUntilLong = 2;
+  } else if (workDuration <= 100) {
+    pomodoroState.settings.sessionsUntilLong = 3;
+  } else {
+    pomodoroState.settings.sessionsUntilLong = 4;
+  }
+
+  const nextBreak = pomodoroGetNextCalendarBreak(target);
+  if (nextBreak && nextBreak.durationMins) {
+    pomodoroState.settings.longBreakMinutes = nextBreak.durationMins;
+  }
+}
 
 /**
  * Returns the total duration in seconds for a given timer mode.
@@ -27,6 +92,69 @@ function pomodoroGetDurationForMode(mode) {
     return pomodoroState.settings.longBreakMinutes * 60;
   }
   return pomodoroState.settings.focusMinutes * 60;
+}
+
+/**
+ * Requests Notification permission if not already granted or denied.
+ */
+function pomodoroRequestNotificationPermission() {
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(err => {
+        console.warn('Notification permission error:', err);
+      });
+    }
+  }
+}
+
+/**
+ * Triggers a browser desktop notification if permitted.
+ */
+function pomodoroSendNotification(title, body) {
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    try {
+      const notif = new Notification(title, {
+        body: body,
+        icon: 'icons/icon-192.png',
+        badge: 'icons/icon-192.png',
+        tag: 'pomodoro-timer'
+      });
+      notif.onclick = () => {
+        window.focus();
+        if (pomodoroState.activeTarget && typeof openEditModal === 'function') {
+          const { weekKey, dayId, blockIndex } = pomodoroState.activeTarget;
+          openEditModal(weekKey, dayId, blockIndex);
+        }
+        notif.close();
+      };
+    } catch (e) {
+      console.warn('Error showing Notification:', e);
+    }
+  }
+}
+
+/**
+ * Updates document.title to show live time and status.
+ */
+function pomodoroUpdateDocumentTitle() {
+  if (!pomodoroState.isRunning && !pomodoroState.isPaused) {
+    document.title = defaultDocumentTitle;
+    return;
+  }
+
+  const mins = Math.floor(pomodoroState.secondsLeft / 60);
+  const secs = pomodoroState.secondsLeft % 60;
+  const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+  let modeLabel = '🍅';
+  if (pomodoroState.mode === 'shortBreak') {
+    modeLabel = '☕';
+  } else if (pomodoroState.mode === 'longBreak') {
+    modeLabel = '🌴';
+  }
+
+  const pauseIndicator = pomodoroState.isPaused ? '⏸ ' : '';
+  document.title = `${pauseIndicator}(${timeStr}) ${modeLabel} | ${defaultDocumentTitle}`;
 }
 
 /**
@@ -44,35 +172,100 @@ function pomodoroPlayBeep() {
     osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
     osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
 
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start();
-    osc.stop(ctx.currentTime + 0.4);
+    osc.stop(ctx.currentTime + 0.45);
   } catch (e) {
     console.warn('AudioContext playback error:', e);
   }
 }
 
 /**
- * Initializes the Pomodoro section inside openEditModal().
- * Reads the block's pomodoro stats, resets timer state, syncs UI.
+ * Initializes or binds the Pomodoro section inside openEditModal().
+ * Reads block pomodoro stats, handles active vs inactive timer.
  */
 function pomodoroInit() {
-  // Clear any existing running timer
-  pomodoroCleanup();
+  if (!activeModalTarget) return;
 
-  pomodoroState.mode = 'focus';
-  pomodoroState.secondsLeft = pomodoroGetDurationForMode('focus');
+  const currentIsActiveTimer = pomodoroState.activeTarget &&
+    pomodoroState.activeTarget.weekKey === activeModalTarget.weekKey &&
+    pomodoroState.activeTarget.dayId === activeModalTarget.dayId &&
+    pomodoroState.activeTarget.blockIndex === activeModalTarget.blockIndex;
+
+  const timerActiveElsewhere = (pomodoroState.isRunning || pomodoroState.isPaused) &&
+    pomodoroState.activeTarget && !currentIsActiveTimer;
+
+  // Manage "Timer running for another block" warning/switch UI inside modal
+  const conflictBanner = document.getElementById('pomodoroActiveConflictBanner');
+  if (conflictBanner) {
+    if (timerActiveElsewhere) {
+      conflictBanner.classList.remove('hidden');
+      const otherBlock = getBlockData(pomodoroState.activeTarget.weekKey, pomodoroState.activeTarget.dayId, pomodoroState.activeTarget.blockIndex);
+      const otherMeta = SCHEDULE_METADATA[pomodoroState.activeTarget.blockIndex];
+      const otherTitle = (otherBlock && otherBlock.title) || (otherMeta ? getDefaultBlockTitle(otherMeta) : 'Block');
+      const textEl = document.getElementById('pomodoroConflictText');
+      if (textEl) {
+        textEl.textContent = I18N.t('pomodoro_active_other_block', { title: otherTitle });
+      }
+    } else {
+      conflictBanner.classList.add('hidden');
+    }
+  }
+
+  // If timer is already running for this block, preserve its state!
+  if (currentIsActiveTimer) {
+    pomodoroUpdateDisplay();
+    pomodoroUpdateModePills();
+    pomodoroUpdateFloatingBar();
+    return;
+  }
+
+  // If timer is not running at all, set target to this opened block
+  if (!pomodoroState.isRunning && !pomodoroState.isPaused) {
+    pomodoroState.activeTarget = { ...activeModalTarget };
+    pomodoroSyncSettingsForTarget(pomodoroState.activeTarget);
+    pomodoroState.mode = 'focus';
+    pomodoroState.secondsLeft = pomodoroGetDurationForMode('focus');
+    pomodoroUpdateDisplay();
+    pomodoroUpdateModePills();
+    pomodoroUpdateFloatingBar();
+  } else {
+    // Timer is active on another block, but still render the current modal stats
+    pomodoroUpdateDisplay();
+    pomodoroUpdateModePills();
+  }
+}
+
+/**
+ * Switches the active timer target to the current active modal target block.
+ */
+function pomodoroSwitchToCurrentModalTarget() {
+  if (!activeModalTarget) return;
+
+  // Reset current timer
+  if (pomodoroState.intervalId) {
+    clearInterval(pomodoroState.intervalId);
+    pomodoroState.intervalId = null;
+  }
+
   pomodoroState.isRunning = false;
   pomodoroState.isPaused = false;
+  pomodoroState.activeTarget = { ...activeModalTarget };
+  pomodoroSyncSettingsForTarget(pomodoroState.activeTarget);
+  pomodoroState.mode = 'focus';
+  pomodoroState.secondsLeft = pomodoroGetDurationForMode('focus');
 
-  // Render stats and timer UI
-  pomodoroUpdateDisplay();
-  pomodoroUpdateModePills();
+  pomodoroInit();
+  pomodoroUpdateFloatingBar();
+  pomodoroUpdateDocumentTitle();
+  if (typeof showToast === 'function') {
+    showToast(I18N.t('pomodoro_switch_to_this_block'));
+  }
 }
 
 /**
@@ -80,6 +273,15 @@ function pomodoroInit() {
  */
 function pomodoroStart() {
   if (pomodoroState.isRunning) return;
+
+  // Request browser notification permission gently on first start
+  pomodoroRequestNotificationPermission();
+
+  // If no target set, use active modal target if present
+  if (!pomodoroState.activeTarget && activeModalTarget) {
+    pomodoroState.activeTarget = { ...activeModalTarget };
+    pomodoroSyncSettingsForTarget(pomodoroState.activeTarget);
+  }
 
   pomodoroState.isRunning = true;
   pomodoroState.isPaused = false;
@@ -90,6 +292,8 @@ function pomodoroStart() {
 
   pomodoroState.intervalId = setInterval(pomodoroTick, 1000);
   pomodoroUpdateDisplay();
+  pomodoroUpdateFloatingBar();
+  pomodoroUpdateDocumentTitle();
 }
 
 /**
@@ -106,6 +310,8 @@ function pomodoroPause() {
   pomodoroState.isRunning = false;
   pomodoroState.isPaused = true;
   pomodoroUpdateDisplay();
+  pomodoroUpdateFloatingBar();
+  pomodoroUpdateDocumentTitle();
 }
 
 /**
@@ -122,6 +328,8 @@ function pomodoroReset() {
   pomodoroState.secondsLeft = pomodoroGetDurationForMode(pomodoroState.mode);
 
   pomodoroUpdateDisplay();
+  pomodoroUpdateFloatingBar();
+  pomodoroUpdateDocumentTitle();
 }
 
 /**
@@ -131,6 +339,8 @@ function pomodoroTick() {
   if (pomodoroState.secondsLeft > 0) {
     pomodoroState.secondsLeft--;
     pomodoroUpdateDisplay();
+    pomodoroUpdateFloatingBar();
+    pomodoroUpdateDocumentTitle();
   }
 
   if (pomodoroState.secondsLeft <= 0) {
@@ -150,15 +360,28 @@ function pomodoroTick() {
 function pomodoroOnSessionComplete() {
   pomodoroPlayBeep();
 
+  const target = pomodoroState.activeTarget;
+  let targetBlockTitle = '';
+  if (target) {
+    const block = getBlockData(target.weekKey, target.dayId, target.blockIndex);
+    const meta = SCHEDULE_METADATA[target.blockIndex];
+    targetBlockTitle = (block && block.title) || (meta ? getDefaultBlockTitle(meta) : 'Block');
+  }
+
   if (pomodoroState.mode === 'focus') {
+    // Show toast and browser notification
     if (typeof showToast === 'function') {
       showToast(I18N.t('pomodoro_session_done'));
     }
+    pomodoroSendNotification(
+      I18N.t('pomodoro_notif_focus_title'),
+      `${targetBlockTitle ? targetBlockTitle + ' — ' : ''}${I18N.t('pomodoro_notif_focus_body')}`
+    );
 
-    // Persist stats to current block
+    // Persist stats to active target block
     let blockSessions = 0;
-    if (activeModalTarget) {
-      const { weekKey, dayId, blockIndex } = activeModalTarget;
+    if (target) {
+      const { weekKey, dayId, blockIndex } = target;
       const block = getBlockData(weekKey, dayId, blockIndex);
       if (!block.pomodoro) {
         block.pomodoro = { sessions: 0, totalFocusMinutes: 0 };
@@ -166,21 +389,40 @@ function pomodoroOnSessionComplete() {
       block.pomodoro.sessions = (block.pomodoro.sessions || 0) + 1;
       block.pomodoro.totalFocusMinutes = (block.pomodoro.totalFocusMinutes || 0) + pomodoroState.settings.focusMinutes;
       blockSessions = block.pomodoro.sessions;
-      pomodoroSaveStats();
+      pomodoroSaveStatsForTarget(target);
     }
 
-    // Auto-switch to break mode
-    // Every 4 sessions -> long break; otherwise short break
-    const isLong = (blockSessions % pomodoroState.settings.sessionsUntilLong === 0);
-    const nextMode = isLong ? 'longBreak' : 'shortBreak';
-    pomodoroSetMode(nextMode);
+    // Check if sessions reached the threshold for the long break
+    const cycleLimit = pomodoroState.settings.sessionsUntilLong || 3;
+    const isLong = (blockSessions % cycleLimit === 0);
+
+    if (isLong) {
+      // Synchronize with the next Calendar Break block!
+      const nextBreak = pomodoroGetNextCalendarBreak(target);
+      if (nextBreak && nextBreak.meta) {
+        const breakTitle = getDefaultBlockTitle(nextBreak.meta);
+        if (typeof showToast === 'function') {
+          showToast(I18N.t('pomodoro_calendar_break_started', { title: breakTitle }));
+        }
+      }
+      pomodoroSetMode('longBreak');
+    } else {
+      pomodoroSetMode('shortBreak');
+    }
   } else {
     // Break finished
     if (typeof showToast === 'function') {
       showToast(I18N.t('pomodoro_break_done'));
     }
+    pomodoroSendNotification(
+      I18N.t('pomodoro_notif_break_title'),
+      I18N.t('pomodoro_notif_break_body')
+    );
     pomodoroSetMode('focus');
   }
+
+  pomodoroUpdateFloatingBar();
+  pomodoroUpdateDocumentTitle();
 }
 
 /**
@@ -199,10 +441,12 @@ function pomodoroSetMode(mode) {
 
   pomodoroUpdateModePills();
   pomodoroUpdateDisplay();
+  pomodoroUpdateFloatingBar();
+  pomodoroUpdateDocumentTitle();
 }
 
 /**
- * Updates the mode pills active/inactive classes.
+ * Updates the mode pills active/inactive classes inside modal.
  */
 function pomodoroUpdateModePills() {
   const pills = {
@@ -228,6 +472,18 @@ function pomodoroUpdateModePills() {
       el.classList.add('font-medium');
     }
   });
+
+  // Calendar sync hint on long break
+  const longBreakHint = document.getElementById('pomodoroLongBreakCalendarHint');
+  if (longBreakHint) {
+    if (pomodoroState.mode === 'longBreak') {
+      longBreakHint.classList.remove('hidden');
+      const durationMins = pomodoroState.settings.longBreakMinutes;
+      longBreakHint.textContent = I18N.t('pomodoro_calendar_break_desc', { mins: durationMins });
+    } else {
+      longBreakHint.classList.add('hidden');
+    }
+  }
 }
 
 /**
@@ -246,7 +502,7 @@ function pomodoroFormatFocusTime(totalMinutes) {
 }
 
 /**
- * Updates #pomodoroDisplay, progress bar, session dots, stats, and buttons.
+ * Updates #pomodoroDisplay, progress bar, session dots, stats, and buttons inside modal.
  */
 function pomodoroUpdateDisplay() {
   // 1. MM:SS Countdown Display
@@ -299,10 +555,12 @@ function pomodoroUpdateDisplay() {
   }
 
   // 4. Session dots and Block Stats
+  // Display target block stats (either active modal block or timer target)
+  const target = (typeof activeModalTarget !== 'undefined' && activeModalTarget) ? activeModalTarget : pomodoroState.activeTarget;
   let sessions = 0;
   let totalFocusMinutes = 0;
-  if (activeModalTarget) {
-    const { weekKey, dayId, blockIndex } = activeModalTarget;
+  if (target) {
+    const { weekKey, dayId, blockIndex } = target;
     const block = getBlockData(weekKey, dayId, blockIndex);
     if (block && block.pomodoro) {
       sessions = block.pomodoro.sessions || 0;
@@ -315,9 +573,8 @@ function pomodoroUpdateDisplay() {
   const statsEl = document.getElementById('pomodoroFocusStat');
 
   if (dotsEl) {
-    const cycleLimit = pomodoroState.settings.sessionsUntilLong;
+    const cycleLimit = pomodoroState.settings.sessionsUntilLong || 3;
     const filledInCycle = sessions % cycleLimit;
-    // e.g. filled = 3 -> ●●●○
     let dotsHtml = '';
     for (let i = 0; i < cycleLimit; i++) {
       if (i < filledInCycle) {
@@ -339,18 +596,121 @@ function pomodoroUpdateDisplay() {
 }
 
 /**
- * Writes completed session data back to the block via getBlockData() + saveAppData().
- * Also upserts to Supabase if configured.
+ * Updates the Persistent Floating Timer Bar on the main page.
  */
-function pomodoroSaveStats() {
-  if (!activeModalTarget) return;
-  const { weekKey, dayId, blockIndex } = activeModalTarget;
+function pomodoroUpdateFloatingBar() {
+  const bar = document.getElementById('pomodoroFloatingBar');
+  if (!bar) return;
+
+  // Show floating bar if timer is running or paused
+  const shouldShow = pomodoroState.isRunning || pomodoroState.isPaused;
+  if (!shouldShow) {
+    bar.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+    bar.classList.remove('translate-y-0', 'opacity-100');
+    return;
+  }
+
+  bar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+  bar.classList.add('translate-y-0', 'opacity-100');
+
+  // Time String
+  const mins = Math.floor(pomodoroState.secondsLeft / 60);
+  const secs = pomodoroState.secondsLeft % 60;
+  const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  const timeEl = document.getElementById('pomodoroFloatingTime');
+  if (timeEl) {
+    timeEl.textContent = timeStr;
+  }
+
+  // Progress Bar
+  const totalDuration = pomodoroGetDurationForMode(pomodoroState.mode);
+  const percent = totalDuration > 0 ? (pomodoroState.secondsLeft / totalDuration) * 100 : 0;
+  const progressEl = document.getElementById('pomodoroFloatingProgress');
+  if (progressEl) {
+    progressEl.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+    if (pomodoroState.mode === 'focus') {
+      progressEl.classList.add('bg-indigo-500');
+      progressEl.classList.remove('bg-emerald-500');
+    } else {
+      progressEl.classList.add('bg-emerald-500');
+      progressEl.classList.remove('bg-indigo-500');
+    }
+  }
+
+  // Mode Icon & Label
+  const modeBadge = document.getElementById('pomodoroFloatingModeBadge');
+  const targetTitleEl = document.getElementById('pomodoroFloatingTargetTitle');
+
+  if (modeBadge) {
+    if (pomodoroState.mode === 'focus') {
+      modeBadge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 flex items-center gap-1';
+      modeBadge.innerHTML = '<span>🍅</span> <span>' + I18N.t('pomodoro_focus') + '</span>';
+    } else if (pomodoroState.mode === 'shortBreak') {
+      modeBadge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1';
+      modeBadge.innerHTML = '<span>☕</span> <span>' + I18N.t('pomodoro_short_break') + '</span>';
+    } else {
+      modeBadge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1';
+      modeBadge.innerHTML = '<span>🌴</span> <span>' + I18N.t('pomodoro_long_break') + '</span>';
+    }
+  }
+
+  if (targetTitleEl && pomodoroState.activeTarget) {
+    const { weekKey, dayId, blockIndex } = pomodoroState.activeTarget;
+    const block = getBlockData(weekKey, dayId, blockIndex);
+    const meta = SCHEDULE_METADATA[blockIndex];
+    const title = (block && block.title) || (meta ? getDefaultBlockTitle(meta) : 'Focus Block');
+    targetTitleEl.textContent = title;
+  }
+
+  // Floating Play / Pause Buttons
+  const playBtn = document.getElementById('pomodoroFloatingPlayBtn');
+  const pauseBtn = document.getElementById('pomodoroFloatingPauseBtn');
+
+  if (playBtn && pauseBtn) {
+    if (pomodoroState.isRunning) {
+      playBtn.classList.add('hidden');
+      pauseBtn.classList.remove('hidden');
+    } else {
+      playBtn.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
+    }
+  }
+}
+
+/**
+ * Opens the target block's edit modal from the floating bar.
+ */
+function pomodoroOpenTargetBlockModal() {
+  if (!pomodoroState.activeTarget) return;
+  const { weekKey, dayId, blockIndex } = pomodoroState.activeTarget;
+  if (typeof openEditModal === 'function') {
+    openEditModal(weekKey, dayId, blockIndex);
+  }
+}
+
+/**
+ * Writes completed session data back to the block via getBlockData() + saveAppData().
+ */
+function pomodoroSaveStatsForTarget(target) {
+  if (!target) return;
+  const { weekKey, dayId, blockIndex } = target;
   const block = getBlockData(weekKey, dayId, blockIndex);
 
   saveAppData();
 
   if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
     SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+  }
+}
+
+/**
+ * Backward compatibility alias for pomodoroSaveStats.
+ */
+function pomodoroSaveStats() {
+  if (pomodoroState.activeTarget) {
+    pomodoroSaveStatsForTarget(pomodoroState.activeTarget);
+  } else if (activeModalTarget) {
+    pomodoroSaveStatsForTarget(activeModalTarget);
   }
 }
 
@@ -380,16 +740,12 @@ function pomodoroToggleCollapse() {
 }
 
 /**
- * Clears interval, stops any running timer without persisting ephemeral state.
- * Called in closeEditModal().
+ * Non-destructive cleanup when edit modal closes:
+ * Keeps interval running and shows floating timer bar!
  */
 function pomodoroCleanup() {
-  if (pomodoroState.intervalId) {
-    clearInterval(pomodoroState.intervalId);
-    pomodoroState.intervalId = null;
-  }
-  pomodoroState.isRunning = false;
-  pomodoroState.isPaused = false;
+  // We do NOT clear interval here so timer keeps counting in background!
+  pomodoroUpdateFloatingBar();
 }
 
 // Wire Event Listeners when DOM is ready
@@ -427,5 +783,54 @@ document.addEventListener('DOMContentLoaded', () => {
   const modeLong = document.getElementById('pomodoroModeLongBreak');
   if (modeLong) {
     modeLong.addEventListener('click', () => pomodoroSetMode('longBreak'));
+  }
+
+  // Conflict switch button inside block modal
+  const conflictSwitchBtn = document.getElementById('pomodoroConflictSwitchBtn');
+  if (conflictSwitchBtn) {
+    conflictSwitchBtn.addEventListener('click', pomodoroSwitchToCurrentModalTarget);
+  }
+
+  // Floating Bar Controls
+  const floatingPlayBtn = document.getElementById('pomodoroFloatingPlayBtn');
+  if (floatingPlayBtn) {
+    floatingPlayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pomodoroStart();
+    });
+  }
+
+  const floatingPauseBtn = document.getElementById('pomodoroFloatingPauseBtn');
+  if (floatingPauseBtn) {
+    floatingPauseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pomodoroPause();
+    });
+  }
+
+  const floatingResetBtn = document.getElementById('pomodoroFloatingResetBtn');
+  if (floatingResetBtn) {
+    floatingResetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pomodoroReset();
+    });
+  }
+
+  const floatingOpenBtn = document.getElementById('pomodoroFloatingOpenBtn');
+  if (floatingOpenBtn) {
+    floatingOpenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pomodoroOpenTargetBlockModal();
+    });
+  }
+
+  const floatingBar = document.getElementById('pomodoroFloatingBar');
+  if (floatingBar) {
+    floatingBar.addEventListener('click', (e) => {
+      // If clicked on bar background, open the block modal
+      if (!e.target.closest('button')) {
+        pomodoroOpenTargetBlockModal();
+      }
+    });
   }
 });
