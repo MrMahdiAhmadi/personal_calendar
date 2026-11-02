@@ -113,6 +113,23 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 6a. Keyboard Shortcuts Modal Listeners
+  const shortcutsBtn = document.getElementById('shortcutsBtn');
+  if (shortcutsBtn) shortcutsBtn.addEventListener('click', openShortcutsModal);
+
+  const closeShortcutsModalBtn = document.getElementById('closeShortcutsModalBtn');
+  if (closeShortcutsModalBtn) closeShortcutsModalBtn.addEventListener('click', closeShortcutsModal);
+
+  const doneShortcutsModalBtn = document.getElementById('doneShortcutsModalBtn');
+  if (doneShortcutsModalBtn) doneShortcutsModalBtn.addEventListener('click', closeShortcutsModal);
+
+  const shortcutsModal = document.getElementById('shortcutsModal');
+  if (shortcutsModal) {
+    shortcutsModal.addEventListener('click', (e) => {
+      if (e.target.id === 'shortcutsModal') closeShortcutsModal();
+    });
+  }
+
   // 6b. Settings Modal Listeners
   const settingsBtn = document.getElementById('settingsBtn');
   if (settingsBtn) settingsBtn.addEventListener('click', openSettingsModal);
@@ -347,7 +364,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 21. Global Escape Key
+  // 21. Global Keyboard Navigation & Shortcuts
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeEditModal();
@@ -357,6 +374,78 @@ window.addEventListener('DOMContentLoaded', () => {
       closeConfirmDialog();
       closeSupabaseModal();
       closeSettingsModal();
+      closeShortcutsModal();
+      return;
+    }
+
+    // Ignore single key shortcuts if user is currently typing in an input, textarea, or select
+    const targetTag = e.target.tagName;
+    if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || e.target.isContentEditable) {
+      return;
+    }
+
+    // Also ignore if Ctrl / Meta / Alt is held down so we don't interfere with browser shortcuts
+    if (e.ctrlKey || e.metaKey || e.altKey) {
+      return;
+    }
+
+    const key = e.key.toLowerCase();
+
+    if (e.key === '?' || (e.shiftKey && key === '/')) {
+      e.preventDefault();
+      const modal = document.getElementById('shortcutsModal');
+      if (modal && !modal.classList.contains('hidden')) {
+        closeShortcutsModal();
+      } else {
+        openShortcutsModal();
+      }
+    } else if (key === 'w') {
+      e.preventDefault();
+      currentViewMode = 'weekly';
+      SafeStorage.setItem(CONFIG.VIEW_KEY, 'weekly');
+      syncViewButtonsUI();
+      renderDayTabs();
+      renderCurrentView();
+    } else if (key === 'v') {
+      e.preventDefault();
+      currentViewMode = 'daily-vertical';
+      SafeStorage.setItem(CONFIG.VIEW_KEY, 'daily-vertical');
+      syncViewButtonsUI();
+      renderDayTabs();
+      renderCurrentView();
+    } else if (key === 'h') {
+      e.preventDefault();
+      currentViewMode = 'daily-horizontal';
+      SafeStorage.setItem(CONFIG.VIEW_KEY, 'daily-horizontal');
+      syncViewButtonsUI();
+      renderDayTabs();
+      renderCurrentView();
+    } else if (key === 't') {
+      e.preventDefault();
+      weekOffset = 0;
+      const currentTime = getCurrentTime();
+      selectedDayId = currentTime.todayIranDayId;
+      renderDayTabs();
+      renderCurrentView();
+    } else if (key === 'j') {
+      e.preventDefault();
+      scrollToCurrentBlock();
+    } else if (e.key === '[') {
+      e.preventDefault();
+      weekOffset--;
+      renderCurrentView();
+    } else if (e.key === ']') {
+      e.preventDefault();
+      weekOffset++;
+      renderCurrentView();
+    } else if (key === 'b') {
+      e.preventDefault();
+      const hubModal = document.getElementById('tasksHubModal');
+      if (hubModal && !hubModal.classList.contains('hidden')) {
+        closeTasksHubModal();
+      } else {
+        openTasksHubModal();
+      }
     }
   });
 

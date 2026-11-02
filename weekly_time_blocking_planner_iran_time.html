@@ -49,7 +49,7 @@
 
   <!-- Header Section -->
   <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 shadow-sm transition-colors">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 sm:gap-3">
+    <div class="max-w-7xl 2xl:max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 sm:gap-3">
       
       <!-- Top Row: Brand, Clock & Mobile Actions -->
       <div class="flex items-center justify-between gap-2 w-full md:w-auto">
@@ -181,6 +181,13 @@
           </div>
         </div>
 
+        <div class="hidden lg:block w-px h-5 bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
+
+        <!-- Keyboard Shortcuts Helper Button -->
+        <button id="shortcutsBtn" title="Keyboard Shortcuts (?)" data-i18n-title="shortcuts_btn" class="hidden sm:flex p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] items-center justify-center font-mono font-bold text-xs">
+          <span>?</span>
+        </button>
+
         <!-- Settings Button -->
         <button id="settingsBtn" title="Settings" data-i18n-title="settings_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
           <i data-lucide="settings" class="w-4 h-4"></i>
@@ -197,7 +204,7 @@
   </header>
 
   <!-- Navigation Toolbar -->
-  <section class="max-w-7xl mx-auto px-4 lg:px-8 pt-4">
+  <section class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 lg:px-8 pt-4">
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col gap-3">
       
       <!-- Top Row: Week Navigator & View Modes -->
@@ -244,7 +251,7 @@
   </section>
 
   <!-- Iran Live Active Block Status Banner -->
-  <section class="max-w-7xl mx-auto px-4 lg:px-8 py-3">
+  <section class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 lg:px-8 py-3">
     <div class="bg-gradient-to-r from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-950/40 dark:via-purple-950/20 border border-indigo-200/50 dark:border-indigo-800/50 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
       <div class="flex items-center gap-3">
         <span class="p-2 rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
@@ -271,13 +278,13 @@
   </section>
 
   <!-- Main View Container -->
-  <main class="max-w-7xl mx-auto px-4 lg:px-8 pb-20">
+  <main class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 lg:px-8 pb-20">
     <div id="blocksContainer" class="transition-all duration-300"></div>
   </main>
 
   <!-- 1. Edit Block Details Modal -->
   <div id="blockModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" id="modalBox">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg lg:max-w-4xl shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" id="modalBox">
       <!-- Sheet Pull Bar Indicator on Mobile -->
       <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
 
@@ -294,140 +301,147 @@
         </button>
       </div>
 
-      <div class="mt-4 space-y-4">
-        <!-- Title Input -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="modal_title_label">Block Title / Focus Goal</label>
-          <input type="text" id="modalTitleInput" placeholder="e.g., Sprint review, reading..." data-i18n-placeholder="modal_title_placeholder" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-        </div>
-
-        <!-- Tag & Status Selection Row -->
-        <div class="grid grid-cols-2 gap-3">
+      <!-- Desktop 2-Column Responsive Body -->
+      <div class="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Left Column: Details, Tag, Status, Tasks (lg:col-span-7) -->
+        <div class="lg:col-span-7 space-y-4">
+          <!-- Title Input -->
           <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300" data-i18n="modal_tag_label">Category Tag</label>
-              <button type="button" id="openTagsMgrFromModal" class="text-[11px] text-indigo-500 hover:underline" data-i18n="modal_tag_config">Configure Tags</button>
-            </div>
-            <select id="modalTagSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <!-- Dynamically populated from custom tags list -->
-            </select>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="modal_title_label">Block Title / Focus Goal</label>
+            <input type="text" id="modalTitleInput" placeholder="e.g., Sprint review, reading..." data-i18n-placeholder="modal_title_placeholder" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="modal_status_label">Status</label>
-            <select id="modalStatusSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="pending" data-i18n="modal_opt_pending">Planned ⚪</option>
-              <option value="in-progress" data-i18n="modal_opt_inprogress">In Progress ⏳</option>
-              <option value="completed" data-i18n="modal_opt_completed">Completed ✅</option>
-              <option value="skipped" data-i18n="modal_opt_skipped">Skipped ⛔</option>
-            </select>
-          </div>
-        </div>
 
-        <!-- Shared Tag Task Checklist Section -->
-        <div class="bg-slate-50 dark:bg-slate-800/40 p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60">
-          <div class="flex items-center justify-between mb-2">
+          <!-- Tag & Status Selection Row -->
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <div class="flex items-center gap-1.5">
-                <i data-lucide="check-square" class="w-4 h-4 text-indigo-500"></i>
-                <label class="text-xs font-bold text-slate-800 dark:text-slate-200" data-i18n="modal_shared_tasks_label">Shared Tasks for this Tag</label>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300" data-i18n="modal_tag_label">Category Tag</label>
+                <button type="button" id="openTagsMgrFromModal" class="text-[11px] text-indigo-500 hover:underline" data-i18n="modal_tag_config">Configure Tags</button>
               </div>
-              <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="modal_shared_tasks_sub">Check the tasks you want to tackle in this block</p>
+              <select id="modalTagSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <!-- Dynamically populated from custom tags list -->
+              </select>
             </div>
-            <button type="button" id="openTasksHubFromBlockBtn" class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline" data-i18n="modal_manage_bank">
-              Manage Task Bank
-            </button>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="modal_status_label">Status</label>
+              <select id="modalStatusSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="pending" data-i18n="modal_opt_pending">Planned ⚪</option>
+                <option value="in-progress" data-i18n="modal_opt_inprogress">In Progress ⏳</option>
+                <option value="completed" data-i18n="modal_opt_completed">Completed ✅</option>
+                <option value="skipped" data-i18n="modal_opt_skipped">Skipped ⛔</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Quick Add Task To Tag Bank directly from block -->
-          <div class="flex gap-2 mb-3">
-            <input type="text" id="modalQuickNewTaskInput" placeholder="Add new task for this tag..." data-i18n-placeholder="modal_quick_task_ph" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button type="button" id="modalQuickAddTaskBtn" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition flex items-center gap-1">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-              <span data-i18n="modal_add_btn">Add</span>
-            </button>
-          </div>
+          <!-- Shared Tag Task Checklist Section -->
+          <div class="bg-slate-50 dark:bg-slate-800/40 p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60">
+            <div class="flex items-center justify-between mb-2">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="check-square" class="w-4 h-4 text-indigo-500"></i>
+                  <label class="text-xs font-bold text-slate-800 dark:text-slate-200" data-i18n="modal_shared_tasks_label">Shared Tasks for this Tag</label>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="modal_shared_tasks_sub">Check the tasks you want to tackle in this block</p>
+              </div>
+              <button type="button" id="openTasksHubFromBlockBtn" class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline" data-i18n="modal_manage_bank">
+                Manage Task Bank
+              </button>
+            </div>
 
-          <!-- Tag Tasks List for this block -->
-          <div id="modalTagTasksList" class="max-h-48 overflow-y-auto space-y-1.5 pr-1"></div>
+            <!-- Quick Add Task To Tag Bank directly from block -->
+            <div class="flex gap-2 mb-3">
+              <input type="text" id="modalQuickNewTaskInput" placeholder="Add new task for this tag..." data-i18n-placeholder="modal_quick_task_ph" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <button type="button" id="modalQuickAddTaskBtn" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition flex items-center gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span data-i18n="modal_add_btn">Add</span>
+              </button>
+            </div>
+
+            <!-- Tag Tasks List for this block -->
+            <div id="modalTagTasksList" class="max-h-48 lg:max-h-56 overflow-y-auto space-y-1.5 pr-1"></div>
+          </div>
         </div>
 
-        <!-- Notes -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="modal_notes_label">Notes & Output</label>
-          <textarea id="modalNotesInput" rows="2" placeholder="Log key outcomes, links, or takeaways..." data-i18n-placeholder="modal_notes_placeholder" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-        </div>
-
-        <!-- Pomodoro Section -->
-        <div class="bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
-          <!-- Collapsible Header -->
-          <div class="flex items-center justify-between p-3.5 cursor-pointer select-none" id="pomodoroToggleBtn">
-            <div class="flex items-center gap-2">
-              <span class="text-base">🍅</span>
-              <span class="text-xs font-bold text-slate-800 dark:text-slate-200" data-i18n="pomodoro_section_title">Pomodoro Timer</span>
-            </div>
-            <button type="button" class="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700/60 text-slate-400 dark:text-slate-300 transition">
-              <i data-lucide="chevron-down" id="pomodoroToggleIcon" class="w-4 h-4 transition-transform duration-200"></i>
-            </button>
+        <!-- Right Column: Notes & Pomodoro Timer (lg:col-span-5) -->
+        <div class="lg:col-span-5 space-y-4 flex flex-col justify-between">
+          <!-- Notes -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="modal_notes_label">Notes & Output</label>
+            <textarea id="modalNotesInput" rows="3" placeholder="Log key outcomes, links, or takeaways..." data-i18n-placeholder="modal_notes_placeholder" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
           </div>
 
-          <!-- Collapsible Body -->
-          <div id="pomodoroSection" class="px-3.5 pb-3.5 space-y-3">
-            <!-- Mode Pills -->
-            <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-700/50">
-              <button type="button" id="pomodoroModeFocus" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow-sm" data-i18n="pomodoro_focus">
-                Focus
-              </button>
-              <button type="button" id="pomodoroModeShortBreak" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition" data-i18n="pomodoro_short_break">
-                Short Break
-              </button>
-              <button type="button" id="pomodoroModeLongBreak" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition" data-i18n="pomodoro_long_break">
-                Long Break
-              </button>
-            </div>
-
-            <!-- Countdown Display -->
-            <div id="pomodoroDisplay" class="font-mono text-4xl font-bold text-center tracking-tight text-slate-900 dark:text-white py-1">
-              25:00
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-              <div id="pomodoroProgressBar" class="h-full bg-indigo-500 rounded-full transition-all duration-300" style="width: 100%;"></div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex items-center justify-center gap-2 pt-1">
-              <button type="button" id="pomodoroStartBtn" class="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition min-h-[40px]">
-                <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                <span id="pomodoroStartBtnLabel" data-i18n="pomodoro_start">Start</span>
-              </button>
-              <button type="button" id="pomodoroPauseBtn" class="hidden items-center gap-1.5 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold shadow-md shadow-amber-500/30 transition min-h-[40px]">
-                <i data-lucide="pause" class="w-3.5 h-3.5"></i>
-                <span data-i18n="pomodoro_pause">Pause</span>
-              </button>
-              <button type="button" id="pomodoroResetBtn" class="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-medium transition min-h-[40px]" title="Reset">
-                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                <span data-i18n="pomodoro_reset">Reset</span>
-              </button>
-            </div>
-
-            <!-- Stats & Session Dots -->
-            <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/50 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <!-- Pomodoro Section -->
+          <div class="bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/60 overflow-hidden flex-1 flex flex-col justify-between">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-3.5 cursor-pointer select-none" id="pomodoroToggleBtn">
               <div class="flex items-center gap-2">
-                <span>Sessions:</span>
-                <span id="pomodoroSessionDots" class="font-bold tracking-widest text-sm text-indigo-500">○○○○</span>
-                <span id="pomodoroSessionRatio" class="text-[11px] text-slate-400">(0 of 4)</span>
+                <span class="text-base">🍅</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200" data-i18n="pomodoro_section_title">Pomodoro Timer</span>
               </div>
-              <div class="flex items-center gap-1">
-                <span data-i18n="pomodoro_stats_label">Focus in this block:</span>
-                <span id="pomodoroFocusStat" class="font-bold text-slate-700 dark:text-slate-200">0m</span>
+              <button type="button" class="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700/60 text-slate-400 dark:text-slate-300 transition">
+                <i data-lucide="chevron-down" id="pomodoroToggleIcon" class="w-4 h-4 transition-transform duration-200"></i>
+              </button>
+            </div>
+
+            <!-- Body -->
+            <div id="pomodoroSection" class="px-3.5 pb-3.5 space-y-3">
+              <!-- Mode Pills -->
+              <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-700/50">
+                <button type="button" id="pomodoroModeFocus" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow-sm" data-i18n="pomodoro_focus">
+                  Focus
+                </button>
+                <button type="button" id="pomodoroModeShortBreak" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition" data-i18n="pomodoro_short_break">
+                  Short Break
+                </button>
+                <button type="button" id="pomodoroModeLongBreak" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition" data-i18n="pomodoro_long_break">
+                  Long Break
+                </button>
+              </div>
+
+              <!-- Countdown Display -->
+              <div id="pomodoroDisplay" class="font-mono text-4xl font-bold text-center tracking-tight text-slate-900 dark:text-white py-1">
+                25:00
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div id="pomodoroProgressBar" class="h-full bg-indigo-500 rounded-full transition-all duration-300" style="width: 100%;"></div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center justify-center gap-2 pt-1">
+                <button type="button" id="pomodoroStartBtn" class="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition min-h-[40px]">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                  <span id="pomodoroStartBtnLabel" data-i18n="pomodoro_start">Start</span>
+                </button>
+                <button type="button" id="pomodoroPauseBtn" class="hidden items-center gap-1.5 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold shadow-md shadow-amber-500/30 transition min-h-[40px]">
+                  <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+                  <span data-i18n="pomodoro_pause">Pause</span>
+                </button>
+                <button type="button" id="pomodoroResetBtn" class="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-medium transition min-h-[40px]" title="Reset">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                  <span data-i18n="pomodoro_reset">Reset</span>
+                </button>
+              </div>
+
+              <!-- Stats & Session Dots -->
+              <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/50 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <div class="flex items-center gap-2">
+                  <span>Sessions:</span>
+                  <span id="pomodoroSessionDots" class="font-bold tracking-widest text-sm text-indigo-500">○○○○</span>
+                  <span id="pomodoroSessionRatio" class="text-[11px] text-slate-400">(0 of 4)</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span data-i18n="pomodoro_stats_label">Focus in this block:</span>
+                  <span id="pomodoroFocusStat" class="font-bold text-slate-700 dark:text-slate-200">0m</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="mt-6 flex items-center justify-end gap-2.5">
+      <div class="mt-6 flex items-center justify-end gap-2.5 border-t border-slate-100 dark:border-slate-800 pt-3">
         <button id="modalCancelBtn" class="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-h-[40px]" data-i18n="modal_cancel">
           Cancel
         </button>
@@ -738,6 +752,65 @@
         <button id="saveSettingsBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition min-h-[40px]" data-i18n="settings_save">
           Apply Settings
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal (Desktop) -->
+  <div id="shortcutsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-5 transform transition-transform scale-95 duration-200" id="shortcutsModalBox">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <i data-lucide="keyboard" class="w-4 h-4"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="shortcuts_modal_title">Keyboard Shortcuts</h3>
+        </div>
+        <button id="closeShortcutsModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-2 text-xs">
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60">
+          <span class="text-slate-600 dark:text-slate-300" data-i18n="shortcuts_view_weekly">Weekly Matrix View</span>
+          <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">W</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60">
+          <span class="text-slate-600 dark:text-slate-300" data-i18n="shortcuts_view_vert">Daily Vertical View</span>
+          <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">V</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60">
+          <span class="text-slate-600 dark:text-slate-300" data-i18n="shortcuts_view_horiz">Daily Horizontal View</span>
+          <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">H</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60">
+          <span class="text-slate-600 dark:text-slate-300" data-i18n="shortcuts_today">Go to Today</span>
+          <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">T</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60">
+          <span class="text-slate-600 dark:text-slate-300" data-i18n="shortcuts_jump">Jump to Active Block</span>
+          <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">J</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60">
+          <span class="text-slate-600 dark:text-slate-300" data-i18n="shortcuts_prev_next">Prev / Next Week</span>
+          <div class="flex gap-1">
+            <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">[</kbd>
+            <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">]</kbd>
+          </div>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800/60">
+          <span class="text-slate-600 dark:text-slate-300" data-i18n="shortcuts_bank">Open Task Bank</span>
+          <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">B</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5">
+          <span class="text-slate-600 dark:text-slate-300" data-i18n="shortcuts_close">Close Modal</span>
+          <kbd class="px-2 py-1 bg-slate-100 dark:bg-slate-800 font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700">Esc</kbd>
+        </div>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button id="doneShortcutsModalBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition min-h-[40px]" data-i18n="modal_cancel">Close</button>
       </div>
     </div>
   </div>
