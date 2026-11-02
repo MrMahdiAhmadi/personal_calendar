@@ -26,6 +26,7 @@ const PRECACHE_ASSETS = [
   './js/views.js',
   './js/modals.js',
   './js/pomodoro.js',
+  './js/insights.js',
   './js/app.js'
 ];
 
