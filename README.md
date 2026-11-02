@@ -21,7 +21,7 @@ This planner is built around focused work sprints and timely breaks across a 24-
 
 ### Key Features
 - **🌐 Bilingual UI:** Instant switching between English (LTR) and Persian (RTL) with localized dates and numbers.
-- **🕒 Accurate Iran Time Engine (`Asia/Tehran`):** Live ticker, Persian/Gregorian date display, and pulse indicator highlighting the active work or break block.
+- **🕒 Live Time Engine:** Real-time clock ticker, Persian/Gregorian date display, and pulse indicator highlighting the active work or break block with customizable timezone support.
 - **⚙️ Customizable Block Durations:** Adjust work (10–180 min) and break (5–60 min) lengths in Settings with automatic daily cycle calculation.
 - **⏱️ Integrated Pomodoro Timer:** Built-in timer inside block modals with customizable work/break durations, progress indicator, and audio chimes.
 - **📱 PWA & Offline Support:** Installable as a Progressive Web App (PWA) on desktop and mobile with service worker caching and live offline status indicator.
@@ -64,7 +64,7 @@ npx serve .
 
 ### قابلیت‌های اصلی
 - **🌐 پشتیبانی دو زبانه (انگلیسی و فارسی):** قابلیت تغییر آنی زبان و چیدمان (RTL و LTR) به همراه تقویم شمسی و میلادی.
-- **🕒 موتور زمان زنده ایران:** نمایش دقیق ساعت رسمی و افکت ضربان روی بلاک فعال جاری.
+- **🕒 موتور زمان زنده:** نمایش دقیق ساعت، تقویم شمسی و میلادی و افکت ضربان روی بلاک فعال جاری با پشتیبانی از تایم‌زون‌های مختلف.
 - **⚙️ زمان‌بندی قابل شخصی‌سازی:** امکان تنظیم مدت زمان کار (۱۰ تا ۱۸۰ دقیقه) و استراحت (۵ تا ۶۰ دقیقه) در تنظیمات با محاسبه و اعمال خودکار چرخه‌ها.
 - **⏱️ تایمر پومودورو یکپارچه:** تایمر تمرکز درون مودال ویرایش هر بلاک با هشدار صوتی و قابلیت تنظیم زمان کار و استراحت.
 - **📱 پشتیبانی از PWA و حالت آفلاین:** قابلیت نصب به عنوان اپلیکیشن تحت وب روی موبایل و دسکتاپ، کش کشیدن منابع با Service Worker و نشانگر وضعیت اتصال.
