@@ -77,26 +77,26 @@ function renderCurrentView() {
 
 /* 1. Weekly Matrix View */
 function renderWeeklyMatrixView(container, weekKey) {
-  container.className = 'w-full overflow-x-auto weekly-scroll-container pb-4';
+  container.className = 'w-full overflow-x-auto weekly-scroll-container pb-4 max-h-[calc(100vh-210px)] overflow-y-auto rounded-2xl';
 
   const wrap = document.createElement('div');
-  wrap.className = 'min-w-[980px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm';
-
-  let headerHtml = `
-    <div class="grid grid-cols-8 border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/60 text-xs font-bold text-slate-700 dark:text-slate-300">
-      <div class="p-3 text-center border-l border-slate-200 dark:border-slate-800">${I18N.t('time_col_header')}</div>
-  `;
+  wrap.className = 'min-w-[980px] lg:min-w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm relative';
 
   const currentTime = getCurrentTime();
   const isCurWeek = weekOffset === 0;
 
+  let headerHtml = `
+    <div class="grid grid-cols-8 border-b border-slate-200 dark:border-slate-800 bg-slate-100/95 dark:bg-slate-900/95 backdrop-blur-sm text-xs font-bold text-slate-700 dark:text-slate-300 sticky top-0 z-30 shadow-sm">
+      <div class="p-3 text-center border-l border-slate-200 dark:border-slate-800 sticky-time-col z-40 bg-slate-100/95 dark:bg-slate-900/95 backdrop-blur-sm">${I18N.t('time_col_header')}</div>
+  `;
+
   DAYS_OF_WEEK.forEach(day => {
     const isToday = isCurWeek && day.id === currentTime.todayIranDayId;
     headerHtml += `
-      <div class="p-3 text-center border-l border-slate-200 dark:border-slate-800 last:border-l-0 ${isToday ? 'bg-indigo-50/80 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300' : ''}">
+      <div class="p-3 text-center border-l border-slate-200 dark:border-slate-800 last:border-l-0 ${isToday ? 'bg-indigo-50/90 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-500/30' : ''}">
         <div class="flex items-center justify-center gap-1.5">
-          <span>${day.name}</span>
-          ${isToday ? `<span class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500 text-white">${I18N.t('today_pill')}</span>` : ''}
+          <span class="tracking-wide">${day.name}</span>
+          ${isToday ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-medium shadow-xs">${I18N.t('today_pill')}</span>` : ''}
         </div>
       </div>
     `;
@@ -110,18 +110,19 @@ function renderWeeklyMatrixView(container, weekKey) {
     if (hideBreaks && !isWork) return;
 
     const rowBg = isWork ? 'bg-transparent' : 'bg-slate-50/60 dark:bg-slate-950/40 opacity-75';
-    const minHeight = isWork ? 'min-h-[58px]' : 'min-h-[34px]';
+    const minHeight = isWork ? 'min-h-[58px] lg:min-h-[66px]' : 'min-h-[34px]';
 
     bodyHtml += `
-      <div class="grid grid-cols-8 ${rowBg} hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-        <div class="${isWork ? 'p-2.5' : 'p-1'} flex flex-col items-center justify-center border-l border-slate-200 dark:border-slate-800 text-[11px] font-mono">
+      <div class="grid grid-cols-8 ${rowBg} hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+        <div class="${isWork ? 'p-2.5' : 'p-1'} flex flex-col items-center justify-center border-l border-slate-200 dark:border-slate-800 text-[11px] font-mono sticky-time-col z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs shadow-xs">
           <span class="font-bold text-slate-800 dark:text-slate-200 leading-tight">${meta.startTimeStr}</span>
           <span class="text-slate-400 text-[10px] leading-tight">${meta.endTimeStr}</span>
-          <span class="text-[9px] mt-0.5 px-1.5 rounded ${isWork ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600' : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600'}">${meta.durationMins}${I18N.t('mins_short')}</span>
+          <span class="text-[9px] mt-0.5 px-1.5 py-0.2 rounded font-semibold ${isWork ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400' : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'}">${meta.durationMins}${I18N.t('mins_short')}</span>
         </div>
     `;
 
     DAYS_OF_WEEK.forEach(day => {
+      const isToday = isCurWeek && day.id === currentTime.todayIranDayId;
       const block = getBlockData(weekKey, day.id, meta.blockIndex);
       const tag = getTagById(block.tagId);
       const statusIcon = getStatusMiniIcon(block.status);
@@ -131,12 +132,12 @@ function renderWeeklyMatrixView(container, weekKey) {
       const defaultTitle = getDefaultBlockTitle(meta);
 
       bodyHtml += `
-        <div class="${isWork ? 'p-1.5' : 'p-1'} border-l border-slate-200 dark:border-slate-800 last:border-l-0 relative group">
+        <div class="${isWork ? 'p-1.5' : 'p-1'} border-l border-slate-200 dark:border-slate-800 last:border-l-0 relative group ${isToday ? 'bg-indigo-50/30 dark:bg-indigo-950/20' : ''}">
           <div 
             onclick="openEditModal('${weekKey}', '${day.id}', ${meta.blockIndex})"
             data-day="${day.id}"
             data-index="${meta.blockIndex}"
-            class="block-element w-full h-full ${minHeight} ${isWork ? 'p-2' : 'p-1.5 border-dashed'} rounded-xl border border-slate-200/80 dark:border-slate-800 cursor-pointer transition hover:shadow-md flex flex-col justify-between"
+            class="block-element w-full h-full ${minHeight} ${isWork ? 'p-2' : 'p-1.5 border-dashed'} rounded-xl border border-slate-200/80 dark:border-slate-800 cursor-pointer transition-all duration-150 hover:shadow-md hover:scale-[1.01] flex flex-col justify-between"
             style="background: ${tag.id !== 'misc' ? tag.color + '18' : 'transparent'}; border-right: 3px solid ${tag.color};"
           >
             <div class="flex items-start justify-between gap-1">
@@ -148,9 +149,9 @@ function renderWeeklyMatrixView(container, weekKey) {
 
             ${isWork ? `
             <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
-              <span class="truncate max-w-[65px] font-normal" style="color: ${tag.color}">${escapeHtml(tag.name)}</span>
+              <span class="truncate max-w-[85px] font-normal" style="color: ${tag.color}">${escapeHtml(tag.name)}</span>
               ${assignedTaskIds.length > 0 ? `
-                <span class="font-mono text-[9px] bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.2 rounded">${doneTaskIds.length}/${assignedTaskIds.length} ${I18N.t('tasks_short')}</span>
+                <span class="font-mono text-[9px] bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.2 rounded font-medium">${doneTaskIds.length}/${assignedTaskIds.length} ${I18N.t('tasks_short')}</span>
               ` : ''}
             </div>
             ` : ''}

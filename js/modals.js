@@ -129,6 +129,32 @@ function closeTagsModal() {
   }, 200);
 }
 
+/* 3.5 Keyboard Shortcuts Modal */
+function openShortcutsModal() {
+  const modal = document.getElementById('shortcutsModal');
+  const box = document.getElementById('shortcutsModalBox');
+  if (!modal || !box) return;
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    modal.classList.remove('opacity-0');
+    box.classList.remove('scale-95', 'translate-y-6');
+    box.classList.add('scale-100', 'translate-y-0');
+  }, 10);
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function closeShortcutsModal() {
+  const modal = document.getElementById('shortcutsModal');
+  const box = document.getElementById('shortcutsModalBox');
+  if (!modal || !box) return;
+  modal.classList.add('opacity-0');
+  box.classList.remove('scale-100', 'translate-y-0');
+  box.classList.add('scale-95', 'translate-y-6');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+  }, 200);
+}
+
 /* 4. Settings Modal */
 function updateSettingsCyclesHelper() {
   const workInput = document.getElementById('settingsWorkBlockInput');

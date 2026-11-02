@@ -58,6 +58,17 @@ header {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Sticky Time Column support for LTR & RTL */
+html[dir="ltr"] .sticky-time-col {
+  position: sticky;
+  left: 0;
+}
+
+html[dir="rtl"] .sticky-time-col {
+  position: sticky;
+  right: 0;
+}
+
 .break-block-compact {
   opacity: 0.85;
   font-size: 0.75rem;

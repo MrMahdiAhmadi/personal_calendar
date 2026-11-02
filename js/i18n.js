@@ -29,6 +29,18 @@ const I18N = {
       lang_switch_btn: "فارسی",
       settings_btn: "Settings",
       mobile_tools_btn: "Tools & Options",
+      shortcuts_btn: "Keyboard Shortcuts (?)",
+
+      // Shortcuts Modal
+      shortcuts_modal_title: "Keyboard Shortcuts",
+      shortcuts_view_weekly: "Weekly Matrix View",
+      shortcuts_view_vert: "Daily Vertical View",
+      shortcuts_view_horiz: "Daily Horizontal View",
+      shortcuts_today: "Go to Today",
+      shortcuts_jump: "Jump to Active Block",
+      shortcuts_prev_next: "Prev / Next Week",
+      shortcuts_bank: "Open Task Bank",
+      shortcuts_close: "Close Modal",
 
       // Settings Modal
       settings_title: "Settings",
@@ -218,6 +230,18 @@ const I18N = {
       lang_switch_btn: "English",
       settings_btn: "تنظیمات",
       mobile_tools_btn: "ابزارها و تنظیمات",
+      shortcuts_btn: "کلیدهای میانبر کیبورد (?)",
+
+      // Shortcuts Modal
+      shortcuts_modal_title: "کلیدهای میانبر کیبورد",
+      shortcuts_view_weekly: "نمای ماتریس هفتگی",
+      shortcuts_view_vert: "نمای روزانه (عمودی)",
+      shortcuts_view_horiz: "نمای روزانه (افقی)",
+      shortcuts_today: "پرش به امروز",
+      shortcuts_jump: "پرش به بلاک فعال در ایران",
+      shortcuts_prev_next: "هفته قبل / هفته بعد",
+      shortcuts_bank: "باز کردن بانک تسک‌ها",
+      shortcuts_close: "بستن پنجره",
 
       // Settings Modal
       settings_title: "تنظیمات",
