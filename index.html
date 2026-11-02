@@ -48,88 +48,99 @@
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200 font-sans selection:bg-indigo-500 selection:text-white">
 
   <!-- Header Section -->
-  <header class="sticky top-0 z-40 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 lg:px-8 py-3 shadow-sm">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+  <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 shadow-sm transition-colors">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 sm:gap-3">
       
-      <!-- Brand & Date Indicator -->
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-          <i data-lucide="calendar-range" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white" data-i18n="app_title">
-              24-Hour Time Blocking Planner
-            </h1>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800" data-i18n="tz_badge">
-              Iran Timezone (Asia/Tehran)
-            </span>
+      <!-- Top Row: Brand, Clock & Mobile Actions -->
+      <div class="flex items-center justify-between gap-2 w-full md:w-auto">
+        <!-- Brand & Title -->
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 flex-shrink-0">
+            <i data-lucide="calendar-range" class="w-5 h-5"></i>
           </div>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5" data-i18n="app_subtitle">
-            Weekly ultradian cycle planner with shared task bank per tag
-          </p>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h1 class="text-sm sm:text-base lg:text-lg font-bold tracking-tight text-slate-900 dark:text-white truncate" data-i18n="app_title">
+                24-Hour Time Blocking Planner
+              </h1>
+              <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex-shrink-0" data-i18n="tz_badge">
+                Iran Timezone (Asia/Tehran)
+              </span>
+            </div>
+            <p class="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5" data-i18n="app_subtitle">
+              Weekly ultradian cycle planner with shared task bank per tag
+            </p>
+          </div>
+        </div>
+
+        <!-- Mobile-Visible Controls (Clock & Primary Actions) -->
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <!-- Live Iran Clock Display -->
+          <div class="flex items-center bg-slate-100 dark:bg-slate-800/80 px-2 sm:px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-inner">
+            <div class="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-mono font-bold text-xs sm:text-sm">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
+              <span id="iranLiveTime">--:--:--</span>
+            </div>
+            <div class="hidden sm:block w-px h-3.5 bg-slate-300 dark:bg-slate-700 mx-2"></div>
+            <div class="hidden sm:block text-[11px] text-slate-600 dark:text-slate-300 font-medium" id="iranLiveDate" data-i18n="live_time_fetching">
+              Fetching Iran time...
+            </div>
+          </div>
+
+          <!-- Mobile "More Tools" Toggle Button (Visible only on < md) -->
+          <button id="mobileToolsToggleBtn" title="More Tools" data-i18n-title="mobile_tools_btn" class="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          </button>
         </div>
       </div>
 
-      <!-- Live Iran Clock Display -->
-      <div class="flex items-center bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-inner">
-        <div class="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-mono font-bold text-sm sm:text-base">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-          </span>
-          <span id="iranLiveTime">--:--:--</span>
-        </div>
-        <div class="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-2.5"></div>
-        <div class="text-xs text-slate-600 dark:text-slate-300 font-medium" id="iranLiveDate" data-i18n="live_time_fetching">
-          Fetching Iran time...
-        </div>
-      </div>
-
-      <!-- Actions & Global Controls -->
-      <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+      <!-- Actions & Global Controls (Desktop bar / Mobile expandable toolbar) -->
+      <div id="headerActionsToolbar" class="hidden md:flex items-center gap-1.5 lg:gap-2 flex-wrap justify-between md:justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
         <!-- Offline Indicator Badge -->
         <div id="offlineStatusBadge" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800 transition" title="Offline Mode" data-i18n-title="offline_tooltip">
           <i data-lucide="wifi-off" class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400"></i>
           <span data-i18n="offline_badge">Offline Mode</span>
         </div>
 
-        <!-- Settings Button -->
-        <button id="settingsBtn" title="Settings" data-i18n-title="settings_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition">
-          <i data-lucide="settings" class="w-4 h-4"></i>
-        </button>
-
-        <!-- Supabase Cloud Sync Status Badge & Button -->
-        <div id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800 cursor-pointer hover:opacity-80 transition" title="Supabase Cloud Connection">
-          <span class="status-indicator-dot bg-amber-500"></span>
-          <span data-i18n="cloud_local">Local Storage</span>
-        </div>
-
-        <button id="openSupabaseBtn" title="Supabase Cloud Settings" data-i18n-title="cloud_settings_title" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 transition">
-          <i data-lucide="cloud" class="w-4 h-4"></i>
-        </button>
-
         <!-- Task Bank Hub Button -->
-        <button id="openTasksHubBtn" title="Manage Task Bank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition">
+        <button id="openTasksHubBtn" title="Manage Task Bank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition min-h-[38px]">
           <i data-lucide="check-square" class="w-3.5 h-3.5 text-indigo-500"></i>
           <span data-i18n="tasks_hub_btn">Task Bank</span>
         </button>
 
+        <!-- Jump to Active Block -->
+        <button id="jumpCurrentBtn" title="Jump to Active Block in Iran" data-i18n-title="jump_active_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
+          <i data-lucide="crosshair" class="w-4 h-4"></i>
+        </button>
+
         <!-- Toggle Hide/Show Breaks Button -->
-        <button id="toggleBreaksBtn" title="Toggle Break Blocks" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium transition">
+        <button id="toggleBreaksBtn" title="Toggle Break Blocks" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium transition min-h-[38px]">
           <i data-lucide="coffee" id="toggleBreaksIcon" class="w-3.5 h-3.5 text-emerald-500"></i>
           <span id="toggleBreaksLabel" class="hidden sm:inline" data-i18n="hide_breaks_btn">Hide Breaks</span>
         </button>
 
         <!-- Manage Custom Tags Button -->
-        <button id="openTagsMgrBtn" title="Manage Category Tags" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium transition">
+        <button id="openTagsMgrBtn" title="Manage Category Tags" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium transition min-h-[38px]">
           <i data-lucide="tags" class="w-3.5 h-3.5 text-indigo-500"></i>
           <span class="hidden md:inline" data-i18n="tags_btn">Tags</span>
         </button>
 
+        <!-- Supabase Cloud Sync Status Badge & Button -->
+        <div id="supabaseStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800 cursor-pointer hover:opacity-80 transition min-h-[38px]" title="Supabase Cloud Connection">
+          <span class="status-indicator-dot bg-amber-500"></span>
+          <span data-i18n="cloud_local">Local Storage</span>
+        </div>
+
+        <button id="openSupabaseBtn" title="Supabase Cloud Settings" data-i18n-title="cloud_settings_title" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
+          <i data-lucide="cloud" class="w-4 h-4"></i>
+        </button>
+
         <!-- Backup & Restore menu -->
         <div class="relative inline-block text-left">
-          <button id="backupMenuBtn" title="Backup & Restore Data" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition">
+          <button id="backupMenuBtn" title="Backup & Restore Data" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
             <i data-lucide="database" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
           </button>
           <div id="backupDropdown" class="hidden absolute right-0 mt-2 w-56 rounded-xl shadow-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-xs font-medium">
@@ -153,14 +164,9 @@
           </div>
         </div>
 
-        <!-- Jump to Active Block -->
-        <button id="jumpCurrentBtn" title="Jump to Active Block in Iran" data-i18n-title="jump_active_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition">
-          <i data-lucide="crosshair" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
-        </button>
-
         <!-- Reset Menu (Day / Week) -->
         <div class="relative inline-block text-left">
-          <button id="resetMenuBtn" title="Reset & Clean Data" data-i18n-title="reset_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 transition">
+          <button id="resetMenuBtn" title="Reset & Clean Data" data-i18n-title="reset_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
             <i data-lucide="trash-2" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
           </button>
           <div id="resetDropdown" class="hidden absolute right-0 mt-2 w-52 rounded-xl shadow-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-xs font-medium">
@@ -175,8 +181,13 @@
           </div>
         </div>
 
+        <!-- Settings Button -->
+        <button id="settingsBtn" title="Settings" data-i18n-title="settings_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+
         <!-- Theme Toggle -->
-        <button id="themeToggleBtn" title="Toggle Color Theme" data-i18n-title="theme_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition">
+        <button id="themeToggleBtn" title="Toggle Color Theme" data-i18n-title="theme_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
           <i data-lucide="sun" class="w-4 h-4 text-amber-500 hidden dark:block"></i>
           <i data-lucide="moon" class="w-4 h-4 text-indigo-600 block dark:hidden"></i>
         </button>
@@ -265,17 +276,20 @@
   </main>
 
   <!-- 1. Edit Block Details Modal -->
-  <div id="blockModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl p-6 transform transition-transform scale-95 duration-200 max-h-[90vh] overflow-y-auto" id="modalBox">
+  <div id="blockModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" id="modalBox">
+      <!-- Sheet Pull Bar Indicator on Mobile -->
+      <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
+
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div class="flex items-center gap-2">
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white" id="modalTimeRange">00:00 - 01:30</h3>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white" id="modalTimeRange">00:00 - 01:30</h3>
             <span id="modalDayPill" class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-semibold"></span>
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="modalBlockType">90-Minute Focus Block</p>
         </div>
-        <button id="closeModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+        <button id="closeModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -310,7 +324,7 @@
         </div>
 
         <!-- Shared Tag Task Checklist Section -->
-        <div class="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60">
+        <div class="bg-slate-50 dark:bg-slate-800/40 p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60">
           <div class="flex items-center justify-between mb-2">
             <div>
               <div class="flex items-center gap-1.5">
@@ -326,8 +340,8 @@
 
           <!-- Quick Add Task To Tag Bank directly from block -->
           <div class="flex gap-2 mb-3">
-            <input type="text" id="modalQuickNewTaskInput" placeholder="Add new task for this tag..." data-i18n-placeholder="modal_quick_task_ph" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button type="button" id="modalQuickAddTaskBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition flex items-center gap-1">
+            <input type="text" id="modalQuickNewTaskInput" placeholder="Add new task for this tag..." data-i18n-placeholder="modal_quick_task_ph" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button type="button" id="modalQuickAddTaskBtn" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition flex items-center gap-1">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i>
               <span data-i18n="modal_add_btn">Add</span>
             </button>
@@ -360,13 +374,13 @@
           <div id="pomodoroSection" class="px-3.5 pb-3.5 space-y-3">
             <!-- Mode Pills -->
             <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-700/50">
-              <button type="button" id="pomodoroModeFocus" class="flex-1 py-1 px-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow-sm" data-i18n="pomodoro_focus">
+              <button type="button" id="pomodoroModeFocus" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow-sm" data-i18n="pomodoro_focus">
                 Focus
               </button>
-              <button type="button" id="pomodoroModeShortBreak" class="flex-1 py-1 px-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition" data-i18n="pomodoro_short_break">
+              <button type="button" id="pomodoroModeShortBreak" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition" data-i18n="pomodoro_short_break">
                 Short Break
               </button>
-              <button type="button" id="pomodoroModeLongBreak" class="flex-1 py-1 px-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition" data-i18n="pomodoro_long_break">
+              <button type="button" id="pomodoroModeLongBreak" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition" data-i18n="pomodoro_long_break">
                 Long Break
               </button>
             </div>
@@ -383,15 +397,15 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center justify-center gap-2 pt-1">
-              <button type="button" id="pomodoroStartBtn" class="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition">
+              <button type="button" id="pomodoroStartBtn" class="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition min-h-[40px]">
                 <i data-lucide="play" class="w-3.5 h-3.5"></i>
                 <span id="pomodoroStartBtnLabel" data-i18n="pomodoro_start">Start</span>
               </button>
-              <button type="button" id="pomodoroPauseBtn" class="hidden items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold shadow-md shadow-amber-500/30 transition">
+              <button type="button" id="pomodoroPauseBtn" class="hidden items-center gap-1.5 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold shadow-md shadow-amber-500/30 transition min-h-[40px]">
                 <i data-lucide="pause" class="w-3.5 h-3.5"></i>
                 <span data-i18n="pomodoro_pause">Pause</span>
               </button>
-              <button type="button" id="pomodoroResetBtn" class="flex items-center gap-1.5 px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-medium transition" title="Reset">
+              <button type="button" id="pomodoroResetBtn" class="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-medium transition min-h-[40px]" title="Reset">
                 <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                 <span data-i18n="pomodoro_reset">Reset</span>
               </button>
@@ -414,10 +428,10 @@
       </div>
 
       <div class="mt-6 flex items-center justify-end gap-2.5">
-        <button id="modalCancelBtn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-i18n="modal_cancel">
+        <button id="modalCancelBtn" class="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-h-[40px]" data-i18n="modal_cancel">
           Cancel
         </button>
-        <button id="modalSaveBtn" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/30 transition" data-i18n="modal_save">
+        <button id="modalSaveBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/30 transition min-h-[40px]" data-i18n="modal_save">
           Save Changes
         </button>
       </div>
@@ -425,9 +439,11 @@
   </div>
 
   <!-- 2. Central Shared Task Hub Modal -->
-  <div id="tasksHubModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl p-6 transform transition-transform scale-95 duration-200 max-h-[90vh] flex flex-col" id="tasksHubBox">
-      
+  <div id="tasksHubModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] flex flex-col" id="tasksHubBox">
+      <!-- Sheet Pull Bar Indicator on Mobile -->
+      <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
+
       <!-- Hub Header -->
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2">
@@ -439,7 +455,7 @@
             <p class="text-[11px] text-slate-400" data-i18n="hub_modal_sub">Category tasks are accessible in all blocks tagged with it</p>
           </div>
         </div>
-        <button id="closeTasksHubBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition">
+        <button id="closeTasksHubBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -459,7 +475,7 @@
               <!-- Options populated dynamically -->
             </select>
             <input type="text" id="tasksHubNewTaskTitle" placeholder="New task title for this category..." data-i18n-placeholder="hub_new_task_ph" class="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button id="tasksHubAddNewTaskBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1 flex-shrink-0">
+            <button id="tasksHubAddNewTaskBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1 flex-shrink-0 min-h-[38px]">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i>
               <span data-i18n="hub_add_task_btn">Add Task</span>
             </button>
@@ -473,13 +489,13 @@
         </div>
 
         <!-- Tasks Scrollable List -->
-        <div id="tasksHubListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[200px]">
+        <div id="tasksHubListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[180px]">
           <!-- Injected dynamically -->
         </div>
       </div>
 
       <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end flex-shrink-0">
-        <button id="doneTasksHubBtn" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition" data-i18n="hub_done_btn">
+        <button id="doneTasksHubBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition min-h-[40px]" data-i18n="hub_done_btn">
           Done
         </button>
       </div>
@@ -487,14 +503,17 @@
   </div>
 
   <!-- 3. Manage Custom Tags Modal -->
-  <div id="tagsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 transform transition-transform scale-95 duration-200" id="tagsModalBox">
+  <div id="tagsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" id="tagsModalBox">
+      <!-- Sheet Pull Bar Indicator on Mobile -->
+      <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
+
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div class="flex items-center gap-2">
           <i data-lucide="palette" class="w-5 h-5 text-indigo-500"></i>
           <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="tags_modal_title">Manage Custom Tags</h3>
         </div>
-        <button id="closeTagsModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition">
+        <button id="closeTagsModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -504,9 +523,9 @@
         <div class="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-2 mb-4">
           <span class="text-xs font-semibold text-slate-700 dark:text-slate-200" data-i18n="tags_new_label">Create New Tag:</span>
           <div class="flex gap-2">
-            <input type="text" id="newTagNameInput" placeholder="Tag name (e.g., Reading, Fitness)" data-i18n-placeholder="tags_name_ph" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <input type="color" id="newTagColorPicker" value="#6366f1" class="w-9 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent" title="Select color">
-            <button id="addNewTagBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition" data-i18n="tags_save_btn">
+            <input type="text" id="newTagNameInput" placeholder="Tag name (e.g., Reading, Fitness)" data-i18n-placeholder="tags_name_ph" class="flex-1 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="color" id="newTagColorPicker" value="#6366f1" class="w-10 h-9 rounded-lg cursor-pointer border-0 p-0 bg-transparent flex-shrink-0" title="Select color">
+            <button id="addNewTagBtn" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition min-h-[38px]" data-i18n="tags_save_btn">
               Save
             </button>
           </div>
@@ -518,7 +537,7 @@
       </div>
 
       <div class="mt-5 flex justify-end">
-        <button id="doneTagsModalBtn" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition" data-i18n="tags_done_btn">
+        <button id="doneTagsModalBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition min-h-[40px]" data-i18n="tags_done_btn">
           Done
         </button>
       </div>
@@ -526,8 +545,11 @@
   </div>
 
   <!-- 4. Supabase Cloud Configuration Modal -->
-  <div id="supabaseModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl p-6 transform transition-transform scale-95 duration-200" id="supabaseModalBox">
+  <div id="supabaseModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" id="supabaseModalBox">
+      <!-- Sheet Pull Bar Indicator on Mobile -->
+      <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
+
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
@@ -538,7 +560,7 @@
             <p class="text-[11px] text-slate-400" data-i18n="sb_modal_sub">Store and sync your schedule in real-time across devices</p>
           </div>
         </div>
-        <button id="closeSupabaseBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition">
+        <button id="closeSupabaseBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -548,12 +570,12 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="sb_url_label">Project Server URL (Project URL)</label>
-          <input type="text" id="sbUrlInput" placeholder="https://your-project.supabase.co" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 dir-ltr text-left">
+          <input type="text" id="sbUrlInput" placeholder="https://your-project.supabase.co" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 dir-ltr text-left">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5" data-i18n="sb_key_label">Project Public Key (Anon / Publishable Key)</label>
-          <input type="password" id="sbKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 dir-ltr text-left">
+          <input type="password" id="sbKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 dir-ltr text-left">
           <p class="text-[10px] text-slate-400 mt-1" data-i18n="sb_key_hint">Found in your Supabase dashboard under Settings > API.</p>
         </div>
 
@@ -562,7 +584,7 @@
             <div class="text-xs font-bold text-slate-800 dark:text-slate-200" data-i18n="sb_migrate_card_title">Migrate all current local data to Supabase</div>
             <div class="text-[10px] text-slate-400" data-i18n="sb_migrate_card_sub">Upload all your tags, tasks, and scheduled blocks to the cloud database.</div>
           </div>
-          <button id="uploadToSupabaseBtn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 flex-shrink-0">
+          <button id="uploadToSupabaseBtn" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1 flex-shrink-0 min-h-[38px]">
             <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
             <span data-i18n="sb_migrate_btn">Upload to Cloud</span>
           </button>
@@ -570,10 +592,10 @@
       </div>
 
       <div class="mt-6 flex justify-end gap-2.5">
-        <button onclick="closeSupabaseModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" data-i18n="sb_close_btn">
+        <button onclick="closeSupabaseModal()" class="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[40px]" data-i18n="sb_close_btn">
           Close
         </button>
-        <button id="saveSupabaseBtn" class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/30 transition" data-i18n="sb_save_btn">
+        <button id="saveSupabaseBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/30 transition min-h-[40px]" data-i18n="sb_save_btn">
           Save & Connect
         </button>
       </div>
@@ -581,14 +603,17 @@
   </div>
 
   <!-- 5. Text Backup Paste Modal -->
-  <div id="pasteBackupModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl p-6 transform transition-transform scale-95 duration-200" id="pasteBackupBox">
+  <div id="pasteBackupModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" id="pasteBackupBox">
+      <!-- Sheet Pull Bar Indicator on Mobile -->
+      <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
+
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div class="flex items-center gap-2">
           <i data-lucide="clipboard-paste" class="w-5 h-5 text-amber-500"></i>
           <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="paste_modal_title">Paste Backup (JSON)</h3>
         </div>
-        <button id="closePasteBackupBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition">
+        <button id="closePasteBackupBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -597,8 +622,8 @@
         <textarea id="pasteBackupTextarea" rows="6" placeholder="{ ... }" class="w-full px-3 py-2 font-mono text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
       </div>
       <div class="mt-4 flex items-center justify-end gap-2">
-        <button id="cancelPasteBackupBtn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" data-i18n="modal_cancel">Cancel</button>
-        <button id="applyPasteBackupBtn" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700" data-i18n="paste_apply_btn">Apply Data</button>
+        <button id="cancelPasteBackupBtn" class="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[40px]" data-i18n="modal_cancel">Cancel</button>
+        <button id="applyPasteBackupBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 min-h-[40px]" data-i18n="paste_apply_btn">Apply Data</button>
       </div>
     </div>
   </div>
@@ -612,15 +637,18 @@
       <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1" id="confirmTitle" data-i18n="confirm_dialog_title">Confirm Action</h4>
       <p class="text-xs text-slate-500 dark:text-slate-400 mb-5" id="confirmMessage" data-i18n="confirm_dialog_msg">Are you sure you want to proceed?</p>
       <div class="flex items-center justify-center gap-2">
-        <button id="confirmCancelBtn" class="flex-1 px-4 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-i18n="confirm_cancel">Cancel</button>
-        <button id="confirmAcceptBtn" class="flex-1 px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white" data-i18n="confirm_accept">Confirm</button>
+        <button id="confirmCancelBtn" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 min-h-[40px]" data-i18n="confirm_cancel">Cancel</button>
+        <button id="confirmAcceptBtn" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white min-h-[40px]" data-i18n="confirm_accept">Confirm</button>
       </div>
     </div>
   </div>
 
   <!-- Settings Modal -->
-  <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 transform transition-transform scale-95 duration-200" id="settingsModalBox">
+  <div id="settingsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md shadow-2xl p-4 sm:p-6 transform transition-transform translate-y-6 sm:translate-y-0 sm:scale-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto" id="settingsModalBox">
+      <!-- Sheet Pull Bar Indicator on Mobile -->
+      <div class="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-3"></div>
+
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
@@ -628,7 +656,7 @@
           </div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white" data-i18n="settings_title">Settings</h3>
         </div>
-        <button id="closeSettingsModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition">
+        <button id="closeSettingsModalBtn" class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition min-w-[36px] min-h-[36px] flex items-center justify-center">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -704,10 +732,10 @@
       </div>
 
       <div class="mt-6 flex justify-end gap-2.5">
-        <button id="cancelSettingsBtn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" data-i18n="modal_cancel">
+        <button id="cancelSettingsBtn" class="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-h-[40px]" data-i18n="modal_cancel">
           Cancel
         </button>
-        <button id="saveSettingsBtn" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition" data-i18n="settings_save">
+        <button id="saveSettingsBtn" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/30 transition min-h-[40px]" data-i18n="settings_save">
           Apply Settings
         </button>
       </div>

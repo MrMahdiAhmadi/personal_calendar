@@ -28,8 +28,8 @@ function openEditModal(weekKey, dayId, blockIndex) {
   modal.classList.remove('hidden');
   setTimeout(() => {
     modal.classList.remove('opacity-0');
-    box.classList.remove('scale-95');
-    box.classList.add('scale-100');
+    box.classList.remove('scale-95', 'translate-y-6');
+    box.classList.add('scale-100', 'translate-y-0');
   }, 10);
 
   if (window.lucide) window.lucide.createIcons();
@@ -47,8 +47,8 @@ function closeEditModal() {
   const modal = document.getElementById('blockModal');
   const box = document.getElementById('modalBox');
   modal.classList.add('opacity-0');
-  box.classList.remove('scale-100');
-  box.classList.add('scale-95');
+  box.classList.remove('scale-100', 'translate-y-0');
+  box.classList.add('scale-95', 'translate-y-6');
   setTimeout(() => {
     modal.classList.add('hidden');
     activeModalTarget = null;
@@ -85,8 +85,8 @@ function openTasksHubModal() {
   modal.classList.remove('hidden');
   setTimeout(() => {
     modal.classList.remove('opacity-0');
-    box.classList.remove('scale-95');
-    box.classList.add('scale-100');
+    box.classList.remove('scale-95', 'translate-y-6');
+    box.classList.add('scale-100', 'translate-y-0');
   }, 10);
   if (window.lucide) window.lucide.createIcons();
 }
@@ -95,8 +95,8 @@ function closeTasksHubModal() {
   const modal = document.getElementById('tasksHubModal');
   const box = document.getElementById('tasksHubBox');
   modal.classList.add('opacity-0');
-  box.classList.remove('scale-100');
-  box.classList.add('scale-95');
+  box.classList.remove('scale-100', 'translate-y-0');
+  box.classList.add('scale-95', 'translate-y-6');
   setTimeout(() => {
     modal.classList.add('hidden');
   }, 200);
@@ -113,8 +113,8 @@ function openTagsModal() {
   modal.classList.remove('hidden');
   setTimeout(() => {
     modal.classList.remove('opacity-0');
-    box.classList.remove('scale-95');
-    box.classList.add('scale-100');
+    box.classList.remove('scale-95', 'translate-y-6');
+    box.classList.add('scale-100', 'translate-y-0');
   }, 10);
 }
 
@@ -122,8 +122,8 @@ function closeTagsModal() {
   const modal = document.getElementById('tagsModal');
   const box = document.getElementById('tagsModalBox');
   modal.classList.add('opacity-0');
-  box.classList.remove('scale-100');
-  box.classList.add('scale-95');
+  box.classList.remove('scale-100', 'translate-y-0');
+  box.classList.add('scale-95', 'translate-y-6');
   setTimeout(() => {
     modal.classList.add('hidden');
   }, 200);
@@ -219,8 +219,8 @@ function openSettingsModal() {
   modal.classList.remove('hidden');
   setTimeout(() => {
     modal.classList.remove('opacity-0');
-    box.classList.remove('scale-95');
-    box.classList.add('scale-100');
+    box.classList.remove('scale-95', 'translate-y-6');
+    box.classList.add('scale-100', 'translate-y-0');
   }, 10);
 
   if (window.lucide) window.lucide.createIcons();
@@ -231,8 +231,8 @@ function closeSettingsModal() {
   const box = document.getElementById('settingsModalBox');
   if (!modal || !box) return;
   modal.classList.add('opacity-0');
-  box.classList.remove('scale-100');
-  box.classList.add('scale-95');
+  box.classList.remove('scale-100', 'translate-y-0');
+  box.classList.add('scale-95', 'translate-y-6');
   setTimeout(() => {
     modal.classList.add('hidden');
   }, 200);
@@ -344,8 +344,8 @@ function openSupabaseModal() {
   modal.classList.remove('hidden');
   setTimeout(() => {
     modal.classList.remove('opacity-0');
-    box.classList.remove('scale-95');
-    box.classList.add('scale-100');
+    box.classList.remove('scale-95', 'translate-y-6');
+    box.classList.add('scale-100', 'translate-y-0');
   }, 10);
 }
 
@@ -353,8 +353,8 @@ function closeSupabaseModal() {
   const modal = document.getElementById('supabaseModal');
   const box = document.getElementById('supabaseModalBox');
   modal.classList.add('opacity-0');
-  box.classList.remove('scale-100');
-  box.classList.add('scale-95');
+  box.classList.remove('scale-100', 'translate-y-0');
+  box.classList.add('scale-95', 'translate-y-6');
   setTimeout(() => {
     modal.classList.add('hidden');
   }, 200);
@@ -557,8 +557,8 @@ function openPasteBackupModal() {
   modal.classList.remove('hidden');
   setTimeout(() => {
     modal.classList.remove('opacity-0');
-    box.classList.remove('scale-95');
-    box.classList.add('scale-100');
+    box.classList.remove('scale-95', 'translate-y-6');
+    box.classList.add('scale-100', 'translate-y-0');
   }, 10);
 }
 
@@ -566,8 +566,8 @@ function closePasteBackupModal() {
   const modal = document.getElementById('pasteBackupModal');
   const box = document.getElementById('pasteBackupBox');
   modal.classList.add('opacity-0');
-  box.classList.remove('scale-100');
-  box.classList.add('scale-95');
+  box.classList.remove('scale-100', 'translate-y-0');
+  box.classList.add('scale-95', 'translate-y-6');
   setTimeout(() => {
     modal.classList.add('hidden');
   }, 200);

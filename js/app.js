@@ -85,7 +85,35 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('offline', updateNetworkStatus);
   updateNetworkStatus();
 
-  // 6. Settings Modal Listeners
+  // 6. Mobile Tools Toolbar Toggle
+  const mobileToolsToggleBtn = document.getElementById('mobileToolsToggleBtn');
+  const headerActionsToolbar = document.getElementById('headerActionsToolbar');
+  if (mobileToolsToggleBtn && headerActionsToolbar) {
+    mobileToolsToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = headerActionsToolbar.classList.contains('hidden');
+      if (isHidden) {
+        headerActionsToolbar.classList.remove('hidden');
+        headerActionsToolbar.classList.add('flex');
+        mobileToolsToggleBtn.classList.add('bg-indigo-100', 'dark:bg-indigo-950', 'text-indigo-600', 'dark:text-indigo-400');
+      } else {
+        headerActionsToolbar.classList.add('hidden');
+        headerActionsToolbar.classList.remove('flex');
+        headerActionsToolbar.classList.remove('bg-indigo-100', 'dark:bg-indigo-950', 'text-indigo-600', 'dark:text-indigo-400');
+      }
+    });
+
+    // Close mobile toolbar if clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth < 768 && !headerActionsToolbar.contains(e.target) && e.target !== mobileToolsToggleBtn) {
+        headerActionsToolbar.classList.add('hidden');
+        headerActionsToolbar.classList.remove('flex');
+        mobileToolsToggleBtn.classList.remove('bg-indigo-100', 'dark:bg-indigo-950', 'text-indigo-600', 'dark:text-indigo-400');
+      }
+    });
+  }
+
+  // 6b. Settings Modal Listeners
   const settingsBtn = document.getElementById('settingsBtn');
   if (settingsBtn) settingsBtn.addEventListener('click', openSettingsModal);
 

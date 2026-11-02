@@ -28,6 +28,7 @@ const I18N = {
       theme_btn: "Toggle Theme",
       lang_switch_btn: "فارسی",
       settings_btn: "Settings",
+      mobile_tools_btn: "Tools & Options",
 
       // Settings Modal
       settings_title: "Settings",
@@ -216,6 +217,7 @@ const I18N = {
       theme_btn: "تغییر تم رنگی",
       lang_switch_btn: "English",
       settings_btn: "تنظیمات",
+      mobile_tools_btn: "ابزارها و تنظیمات",
 
       // Settings Modal
       settings_title: "تنظیمات",
