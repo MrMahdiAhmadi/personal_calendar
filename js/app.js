@@ -265,7 +265,7 @@ window.addEventListener('DOMContentLoaded', () => {
     renderCurrentView();
   });
 
-  // 12. Week Navigation
+  // 12. Week Navigation & Routine Automation
   document.getElementById('prevWeekBtn').addEventListener('click', () => {
     weekOffset--;
     renderCurrentView();
@@ -281,6 +281,43 @@ window.addEventListener('DOMContentLoaded', () => {
     renderDayTabs();
     renderCurrentView();
   });
+
+  // Copy Previous Week Routine
+  const copyPrevWeekBtn = document.getElementById('copyPrevWeekBtn');
+  if (copyPrevWeekBtn) {
+    copyPrevWeekBtn.addEventListener('click', copyPreviousWeekRoutine);
+  }
+
+  // Routine Templates Modal Listeners
+  const openTemplatesBtn = document.getElementById('openTemplatesBtn');
+  if (openTemplatesBtn) {
+    openTemplatesBtn.addEventListener('click', openTemplatesModal);
+  }
+
+  const closeTemplatesModalBtn = document.getElementById('closeTemplatesModalBtn');
+  if (closeTemplatesModalBtn) {
+    closeTemplatesModalBtn.addEventListener('click', closeTemplatesModal);
+  }
+
+  const doneTemplatesModalBtn = document.getElementById('doneTemplatesModalBtn');
+  if (doneTemplatesModalBtn) {
+    doneTemplatesModalBtn.addEventListener('click', closeTemplatesModal);
+  }
+
+  const saveWeekAsTemplateBtn = document.getElementById('saveWeekAsTemplateBtn');
+  if (saveWeekAsTemplateBtn) {
+    saveWeekAsTemplateBtn.addEventListener('click', saveCurrentWeekAsTemplate);
+  }
+
+  const newTemplateNameInput = document.getElementById('newTemplateNameInput');
+  if (newTemplateNameInput) {
+    newTemplateNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveCurrentWeekAsTemplate();
+      }
+    });
+  }
 
   // 13. Theme toggle
   document.getElementById('themeToggleBtn').addEventListener('click', () => {
@@ -366,6 +403,12 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('tagsModal').addEventListener('click', (e) => {
     if (e.target.id === 'tagsModal') closeTagsModal();
   });
+  const tmplModal = document.getElementById('templatesModal');
+  if (tmplModal) {
+    tmplModal.addEventListener('click', (e) => {
+      if (e.target.id === 'templatesModal') closeTemplatesModal();
+    });
+  }
   document.getElementById('pasteBackupModal').addEventListener('click', (e) => {
     if (e.target.id === 'pasteBackupModal') closePasteBackupModal();
   });
@@ -390,6 +433,7 @@ window.addEventListener('DOMContentLoaded', () => {
       closeSupabaseModal();
       closeSettingsModal();
       closeShortcutsModal();
+      closeTemplatesModal();
       return;
     }
 

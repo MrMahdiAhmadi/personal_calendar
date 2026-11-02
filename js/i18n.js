@@ -73,6 +73,25 @@ const I18N = {
       this_week_btn: "This Week",
       weeks_later: "weeks later",
       weeks_ago: "weeks ago",
+      copy_prev_week_btn: "Copy From Last Week",
+      copy_prev_week_title: "Copy routine structure from previous week",
+      templates_btn: "Templates",
+      templates_btn_title: "Manage weekly routine templates",
+
+      // Templates Modal
+      templates_modal_title: "Weekly Routine Templates",
+      templates_modal_sub: "Save and reuse full weekly structures for work, study, or travel",
+      save_current_week_template_label: "Save Current Week as Template",
+      template_name_ph: "e.g. Standard Work Week, Exam Prep...",
+      save_template_btn: "Save Template",
+      saved_templates_label: "Saved Templates",
+      template_blocks_count: "{count} scheduled blocks",
+      apply_template_btn: "Apply to Week",
+      preview_template_btn: "Preview",
+      delete_template_btn: "Delete",
+      no_templates_msg: "No weekly templates saved yet. Customize a week and save it above!",
+      template_created_at: "Created {date}",
+      template_preview_title: "Template Preview: {name}",
 
       // View Modes
       view_weekly_matrix: "Weekly Matrix",
@@ -207,6 +226,12 @@ const I18N = {
       confirm_reset_day_msg: "Are you sure you want to reset all 24 time blocks for {day} to default?",
       confirm_reset_week_title: "Clear Full Week Schedule",
       confirm_reset_week_msg: "Notice: All blocks, tasks, and notes for all 7 days in this week will be reset. Proceed?",
+      confirm_overwrite_copy_title: "Overwrite Current Week with Previous Week?",
+      confirm_overwrite_copy_msg: "The current week already contains {count} scheduled blocks. Copying from previous week will replace them with a fresh, reset copy. Continue?",
+      confirm_overwrite_template_title: "Apply Template to This Week?",
+      confirm_overwrite_template_msg: "The current week already contains {count} scheduled blocks. Applying template '{name}' will overwrite them. Continue?",
+      confirm_delete_template_title: "Delete Template?",
+      confirm_delete_template_msg: "Are you sure you want to delete the template '{name}'?",
 
       // Toasts
       toast_block_saved: "Block changes saved.",
@@ -226,7 +251,14 @@ const I18N = {
       toast_cloud_upload_done: "All data successfully uploaded to Supabase! 🚀",
       toast_cloud_saved: "Settings saved. Connecting...",
       toast_cloud_offline: "Settings saved (offline mode).",
-      toast_settings_saved: "Settings applied and saved."
+      toast_settings_saved: "Settings applied and saved.",
+      toast_prev_week_copied: "Previous week routine copied successfully! 📋",
+      toast_prev_week_empty: "Previous week has no scheduled blocks to copy.",
+      toast_curr_week_empty: "Current week has no blocks to save as a template.",
+      toast_template_saved: "Template '{name}' saved successfully! 💾",
+      toast_template_applied: "Template '{name}' applied to current week! 🚀",
+      toast_template_deleted: "Template deleted.",
+      toast_template_name_required: "Please enter a template name."
     },
 
     fa: {
@@ -295,6 +327,25 @@ const I18N = {
       this_week_btn: "پرش به هفته جاری",
       weeks_later: "هفته بعد",
       weeks_ago: "هفته قبل",
+      copy_prev_week_btn: "کپی از هفته قبل",
+      copy_prev_week_title: "کپی کردن ساختار و شالوده روتین از هفته قبل",
+      templates_btn: "الگوهای روتین",
+      templates_btn_title: "مدیریت و بارگذاری قالب‌های روتین هفتگی",
+
+      // Templates Modal
+      templates_modal_title: "سیستم الگوهای روتین هفتگی (Templates)",
+      templates_modal_sub: "ذخیره و بارگذاری آسان ساختار هفته (هفته کاری، امتحانات، سفر و...)",
+      save_current_week_template_label: "ذخیره ساختار این هفته به عنوان الگو",
+      template_name_ph: "مثال: هفته عادی کاری، هفته امتحانات، هفته سفر...",
+      save_template_btn: "ذخیره الگو",
+      saved_templates_label: "الگوهای ذخیره‌شده",
+      template_blocks_count: "{count} بلوک برنامه‌ریزی‌شده",
+      apply_template_btn: "اعمال روی این هفته",
+      preview_template_btn: "پیش‌نمایش",
+      delete_template_btn: "حذف",
+      no_templates_msg: "هنوز الگویی ذخیره نشده است. یک هفته را پر کنید و با فرم بالا ذخیره نمایید!",
+      template_created_at: "ثبت در {date}",
+      template_preview_title: "پیش‌نمایش الگو: {name}",
 
       // View Modes
       view_weekly_matrix: "ماتریس هفتگی",
@@ -429,6 +480,12 @@ const I18N = {
       confirm_reset_day_msg: "آیا مطمئن هستید که می‌خواهید تمام ۲۴ بلاک زمانی روز «{day}» را به حالت پیش‌فرض و خالی بازنشانی کنید؟",
       confirm_reset_week_title: "حذف کل برنامه هفته",
       confirm_reset_week_msg: "توجه: با این کار تمام تسک‌ها، عناوین و وضعیت‌های هر ۷ روز در این هفته پاک خواهند شد. آیا ادامه می‌دهید؟",
+      confirm_overwrite_copy_title: "جایگزینی با برنامه هفته قبل؟",
+      confirm_overwrite_copy_msg: "هفته جاری دارای {count} بلوک دارای اطلاعات است. با کپی از هفته قبل، ساختار روتین هفته گذشته با وضعیت سفید جایگزین خواهد شد. آیا ادامه می‌دهید؟",
+      confirm_overwrite_template_title: "بارگذاری الگو روی هفته جاری؟",
+      confirm_overwrite_template_msg: "هفته جاری در حال حاضر دارای {count} بلوک دارای اطلاعات است. بارگذاری الگوی «{name}» اطلاعات جاری را بازنویسی می‌کند. آیا تأیید می‌کنید؟",
+      confirm_delete_template_title: "حذف الگوی هفتگی؟",
+      confirm_delete_template_msg: "آیا مطمئن هستید که می‌خواهید الگوی «{name}» را حذف کنید؟",
 
       // Toasts
       toast_block_saved: "اطلاعات بلاک ذخیره شد.",
@@ -448,7 +505,14 @@ const I18N = {
       toast_cloud_upload_done: "تمام اطلاعات با موفقیت به سوپابیس منتقل شدند! 🚀",
       toast_cloud_saved: "تنظیمات ذخیره شد. در حال اتصال...",
       toast_cloud_offline: "تنظیمات ذخیره شد (حالت آفلاین).",
-      toast_settings_saved: "تنظیمات با موفقیت اعمال و ذخیره شد."
+      toast_settings_saved: "تنظیمات با موفقیت اعمال و ذخیره شد.",
+      toast_prev_week_copied: "روتین هفته قبل با موفقیت کپی شد! 📋",
+      toast_prev_week_empty: "هفته قبل فاقد اطلاعات یا بلوک زمان‌بندی‌شده برای کپی است.",
+      toast_curr_week_empty: "در این هفته هیچ بلوک زمان‌بندی‌شده‌ای برای ذخیره به عنوان الگو وجود ندارد.",
+      toast_template_saved: "الگوی «{name}» با موفقیت ذخیره شد! 💾",
+      toast_template_applied: "الگوی «{name}» با موفقیت روی هفته جاری اعمال شد! 🚀",
+      toast_template_deleted: "الگو حذف شد.",
+      toast_template_name_required: "لطفاً عنوانی برای الگو وارد کنید."
     }
   },
 

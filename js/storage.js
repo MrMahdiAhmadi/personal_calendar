@@ -73,6 +73,7 @@ const AppSettings = {
 /* Application State */
 let customTags = [];
 let sharedTasksBank = []; // Array of { id, tagId, title }
+let weeklyTemplates = []; // Array of { id, name, createdAt, blocksData: { dayId: { blockIndex: { title, tagId, notes, blockTasks } } } }
 let weekOffset = 0;
 let selectedDayId = 'sat';
 let currentViewMode = 'weekly';
@@ -108,6 +109,14 @@ function loadAppData() {
     weeksData = storedData ? JSON.parse(storedData) : {};
   } catch (e) {
     weeksData = {};
+  }
+
+  // 3.5 Weekly Templates
+  try {
+    const storedTemplates = SafeStorage.getItem(CONFIG.TEMPLATES_KEY);
+    weeklyTemplates = storedTemplates ? JSON.parse(storedTemplates) : [];
+  } catch (e) {
+    weeklyTemplates = [];
   }
 
   // 4. Preferences
@@ -254,6 +263,131 @@ function saveTasksBank() {
     renderModalBlockTasks();
   }
   renderCurrentView();
+}
+
+function saveTemplatesData() {
+  SafeStorage.setItem(CONFIG.TEMPLATES_KEY, JSON.stringify(weeklyTemplates));
+}
+
+// Check if a week has any user-entered content (titles, notes, or tasks)
+function getWeekDataSummary(weekKey) {
+  const week = weeksData[weekKey];
+  if (!week) return { count: 0, tagIds: [] };
+
+  let count = 0;
+  const tagSet = new Set();
+
+  DAYS_OF_WEEK.forEach(day => {
+    const dayData = week[day.id];
+    if (dayData) {
+      Object.keys(dayData).forEach(bIdx => {
+        const blk = dayData[bIdx];
+        if (!blk) return;
+        const hasTitle = blk.title && blk.title.trim() !== '';
+        const hasNotes = blk.notes && blk.notes.trim() !== '';
+        const assignedTasks = Object.keys(blk.blockTasks || {}).filter(k => blk.blockTasks[k].assigned);
+        if (hasTitle || hasNotes || assignedTasks.length > 0) {
+          count++;
+          if (blk.tagId) tagSet.add(blk.tagId);
+        }
+      });
+    }
+  });
+
+  return { count, tagIds: Array.from(tagSet) };
+}
+
+function hasWeekData(weekKey) {
+  return getWeekDataSummary(weekKey).count > 0;
+}
+
+// Extract sanitized routine structure from a source week:
+// resets status to 'pending', task items completed to false, pomodoro counters reset
+function extractRoutineFromWeek(sourceWeekKey) {
+  const sourceWeek = weeksData[sourceWeekKey];
+  if (!sourceWeek) return null;
+
+  const routine = {};
+  let totalBlocks = 0;
+  const tagSet = new Set();
+
+  DAYS_OF_WEEK.forEach(day => {
+    routine[day.id] = {};
+    const dayData = sourceWeek[day.id] || {};
+    Object.keys(dayData).forEach(bIdx => {
+      const blk = dayData[bIdx];
+      if (!blk) return;
+      const hasTitle = blk.title && blk.title.trim() !== '';
+      const hasNotes = blk.notes && blk.notes.trim() !== '';
+      const assignedTasks = Object.keys(blk.blockTasks || {}).filter(k => blk.blockTasks[k].assigned);
+
+      // Only copy blocks that user has customized or given title/notes/tasks
+      if (hasTitle || hasNotes || assignedTasks.length > 0 || (blk.tagId && blk.tagId !== 'misc')) {
+        totalBlocks++;
+        if (blk.tagId) tagSet.add(blk.tagId);
+
+        // Sanitize block tasks: keep assigned flag, set completed to false
+        const cleanTasks = {};
+        if (blk.blockTasks) {
+          Object.keys(blk.blockTasks).forEach(tid => {
+            if (blk.blockTasks[tid].assigned) {
+              cleanTasks[tid] = {
+                assigned: true,
+                completed: false
+              };
+            }
+          });
+        }
+
+        routine[day.id][bIdx] = {
+          title: blk.title || '',
+          status: 'pending', // always start fresh!
+          tagId: blk.tagId || 'misc',
+          notes: blk.notes || '',
+          blockTasks: cleanTasks,
+          pomodoro: { sessions: 0, totalFocusMinutes: 0 }
+        };
+      }
+    });
+  });
+
+  if (totalBlocks === 0) return null;
+  return {
+    blocksData: routine,
+    totalBlocks,
+    tagIds: Array.from(tagSet)
+  };
+}
+
+// Apply sanitized routine blocks to a target week
+function applyRoutineToWeek(targetWeekKey, routineBlocksData) {
+  ensureWeekStructure(targetWeekKey);
+
+  // Initialize or clear target week structure
+  weeksData[targetWeekKey] = {};
+  ensureWeekStructure(targetWeekKey);
+
+  DAYS_OF_WEEK.forEach(day => {
+    const dayRoutine = (routineBlocksData && routineBlocksData[day.id]) || {};
+    Object.keys(dayRoutine).forEach(bIdx => {
+      const blk = dayRoutine[bIdx];
+      // Clone deeply to avoid reference mutations
+      weeksData[targetWeekKey][day.id][bIdx] = {
+        title: blk.title || '',
+        status: 'pending',
+        tagId: blk.tagId || 'misc',
+        notes: blk.notes || '',
+        blockTasks: JSON.parse(JSON.stringify(blk.blockTasks || {})),
+        pomodoro: { sessions: 0, totalFocusMinutes: 0 }
+      };
+
+      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+        SupabaseSync.upsertBlock(targetWeekKey, day.id, parseInt(bIdx, 10), weeksData[targetWeekKey][day.id][bIdx]);
+      }
+    });
+  });
+
+  saveAppData();
 }
 
 function ensureWeekStructure(weekKey) {
