@@ -217,11 +217,21 @@ function getBlockData(weekKey, dayId, blockIndex) {
       status: 'pending',
       tagId: 'misc',
       notes: '',
-      blockTasks: {}
+      blockTasks: {},
+      pomodoro: {
+        sessions: 0,
+        totalFocusMinutes: 0
+      }
     };
   }
   if (!weeksData[weekKey][dayId][blockIndex].blockTasks) {
     weeksData[weekKey][dayId][blockIndex].blockTasks = {};
+  }
+  if (!weeksData[weekKey][dayId][blockIndex].pomodoro) {
+    weeksData[weekKey][dayId][blockIndex].pomodoro = {
+      sessions: 0,
+      totalFocusMinutes: 0
+    };
   }
   return weeksData[weekKey][dayId][blockIndex];
 }

@@ -99,6 +99,19 @@ const I18N = {
       modal_block_work_desc: "Cycle {cycle}: Deep Work Block (90 Minutes)",
       modal_block_break_desc: "Cycle {cycle}: Rest & Recharge Block (30 Minutes)",
 
+      // Pomodoro Timer
+      pomodoro_section_title: "Pomodoro Timer",
+      pomodoro_focus: "Focus",
+      pomodoro_short_break: "Short Break",
+      pomodoro_long_break: "Long Break",
+      pomodoro_start: "Start",
+      pomodoro_pause: "Pause",
+      pomodoro_resume: "Resume",
+      pomodoro_reset: "Reset",
+      pomodoro_session_done: "Focus session complete! Take a break 🎉",
+      pomodoro_break_done: "Break over! Ready to focus? 💪",
+      pomodoro_stats_label: "Focus in this block:",
+
       // Tasks Hub Modal
       hub_modal_title: "Shared Task Bank by Category",
       hub_modal_sub: "Tasks assigned to each category are accessible across all matching blocks",
@@ -265,6 +278,19 @@ const I18N = {
       modal_save: "ذخیره تغییرات",
       modal_block_work_desc: "سیکل {cycle}: بلوک تمرکز و کار عمیق (۹۰ دقیقه)",
       modal_block_break_desc: "سیکل {cycle}: بلوک استراحت و تنفس (۳۰ دقیقه)",
+
+      // Pomodoro Timer
+      pomodoro_section_title: "تایمر پومودورو",
+      pomodoro_focus: "تمرکز",
+      pomodoro_short_break: "استراحت کوتاه",
+      pomodoro_long_break: "استراحت طولانی",
+      pomodoro_start: "شروع",
+      pomodoro_pause: "توقف",
+      pomodoro_resume: "ادامه",
+      pomodoro_reset: "ریست",
+      pomodoro_session_done: "جلسه تمرکز تموم شد! بریم استراحت 🎉",
+      pomodoro_break_done: "استراحت تموم شد! آماده‌ای؟ 💪",
+      pomodoro_stats_label: "تمرکز در این بلاک:",
 
       // Tasks Hub Modal
       hub_modal_title: "بانک تسک‌های مشترک حوزه‌ها",
