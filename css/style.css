@@ -143,3 +143,33 @@ html[dir="rtl"] .sticky-time-col {
 #tasksHubFilterTabs::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Edge */
 }
+
+/* Drag and Drop Task Reordering Styles */
+.task-drag-handle {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.task-drag-handle:active {
+  cursor: grabbing;
+}
+
+.task-drag-item {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.task-drag-item.is-dragging {
+  opacity: 0.45;
+  transform: scale(0.98);
+  box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.25);
+}
+
+.task-drag-item.drag-over-top {
+  border-top: 2px solid #6366f1 !important;
+}
+
+.task-drag-item.drag-over-bottom {
+  border-bottom: 2px solid #6366f1 !important;
+}

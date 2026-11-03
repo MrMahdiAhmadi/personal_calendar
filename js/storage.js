@@ -502,6 +502,7 @@ function extractRoutineFromWeek(sourceWeekKey) {
           tagId: blk.tagId || 'misc',
           notes: blk.notes || '',
           blockTasks: cleanTasks,
+          taskOrder: Array.isArray(blk.taskOrder) ? [...blk.taskOrder] : [],
           pomodoro: { sessions: 0, totalFocusMinutes: 0 }
         };
       }
@@ -538,6 +539,7 @@ function applyRoutineToWeek(targetWeekKey, routineBlocksData) {
         tagId: blk.tagId || 'misc',
         notes: blk.notes || '',
         blockTasks: JSON.parse(JSON.stringify(blk.blockTasks || {})),
+        taskOrder: Array.isArray(blk.taskOrder) ? [...blk.taskOrder] : [],
         pomodoro: { sessions: 0, totalFocusMinutes: 0 }
       };
       weeksData[targetWeekKey][day.id][parsedIdx] = blockObj;
@@ -584,6 +586,7 @@ function getBlockData(weekKey, dayId, blockIndex) {
       tagId: 'misc',
       notes: '',
       blockTasks: {},
+      taskOrder: [],
       pomodoro: {
         sessions: 0,
         totalFocusMinutes: 0
@@ -592,6 +595,9 @@ function getBlockData(weekKey, dayId, blockIndex) {
   }
   if (!weeksData[weekKey][dayId][blockIndex].blockTasks) {
     weeksData[weekKey][dayId][blockIndex].blockTasks = {};
+  }
+  if (!Array.isArray(weeksData[weekKey][dayId][blockIndex].taskOrder)) {
+    weeksData[weekKey][dayId][blockIndex].taskOrder = [];
   }
   if (!weeksData[weekKey][dayId][blockIndex].pomodoro) {
     weeksData[weekKey][dayId][blockIndex].pomodoro = {
