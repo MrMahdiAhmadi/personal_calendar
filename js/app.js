@@ -505,7 +505,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('jumpCurrentBtn').addEventListener('click', scrollToCurrentBlock);
 
   // 18. Block Modal listeners
-  document.getElementById('closeModalBtn').addEventListener('click', closeEditModal);
+  document.getElementById('closeModalBtn').addEventListener('click', saveBlockModalChanges);
   document.getElementById('modalCancelBtn').addEventListener('click', closeEditModal);
   document.getElementById('modalSaveBtn').addEventListener('click', saveBlockModalChanges);
 
@@ -523,7 +523,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const blockModal = document.getElementById('blockModal');
   if (blockModal) {
     blockModal.addEventListener('click', (e) => {
-      if (e.target.id === 'blockModal') closeEditModal();
+      if (e.target.id === 'blockModal') saveBlockModalChanges();
     });
   }
 
