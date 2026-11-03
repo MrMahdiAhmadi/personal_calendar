@@ -16,6 +16,8 @@ create table if not exists public.planner_tasks (
   id text primary key,
   tag_id text references public.planner_tags(id) on delete set null,
   title text not null,
+  completed boolean default false not null,
+  completed_at timestamptz,
   created_at timestamptz default timezone('utc'::text, now()) not null
 );
 

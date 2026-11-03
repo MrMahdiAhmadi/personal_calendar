@@ -72,7 +72,7 @@ const AppSettings = {
 
 /* Application State */
 let customTags = [];
-let sharedTasksBank = []; // Array of { id, tagId, title }
+let sharedTasksBank = []; // Array of { id, tagId, title, completed, completedAt }
 let weeklyTemplates = []; // Array of { id, name, createdAt, blocksData: { dayId: { blockIndex: { title, tagId, notes, blockTasks } } } }
 let weekOffset = 0;
 let selectedDayId = 'sat';
@@ -98,7 +98,12 @@ function loadAppData() {
   // 2. Shared Tasks Bank
   try {
     const storedTasks = SafeStorage.getItem(CONFIG.TASKS_BANK_KEY);
-    sharedTasksBank = storedTasks ? JSON.parse(storedTasks) : [...DEFAULT_TASK_BANK];
+    const parsedTasks = storedTasks ? JSON.parse(storedTasks) : [...DEFAULT_TASK_BANK];
+    sharedTasksBank = parsedTasks.map(t => ({
+      ...t,
+      completed: !!t.completed,
+      completedAt: t.completedAt || null
+    }));
   } catch (e) {
     sharedTasksBank = [...DEFAULT_TASK_BANK];
   }

@@ -65,12 +65,12 @@ const DEFAULT_TAGS = [
 ];
 
 const DEFAULT_TASK_BANK = [
-  { id: 'tsk-1', tagId: 'work',     title: 'Plan daily priorities & review action items' },
-  { id: 'tsk-2', tagId: 'work',     title: 'Deep focus on core task deliverables' },
-  { id: 'tsk-3', tagId: 'study',    title: 'Read chapter / learn new concept' },
-  { id: 'tsk-4', tagId: 'study',    title: 'Review notes & summarize key takeaways' },
-  { id: 'tsk-5', tagId: 'fitness',  title: 'Light walk, stretch or workout' },
-  { id: 'tsk-6', tagId: 'misc',     title: 'Clear inbox and organize workspace' }
+  { id: 'tsk-1', tagId: 'work',     title: 'Plan daily priorities & review action items', completed: false, completedAt: null },
+  { id: 'tsk-2', tagId: 'work',     title: 'Deep focus on core task deliverables', completed: false, completedAt: null },
+  { id: 'tsk-3', tagId: 'study',    title: 'Read chapter / learn new concept', completed: false, completedAt: null },
+  { id: 'tsk-4', tagId: 'study',    title: 'Review notes & summarize key takeaways', completed: false, completedAt: null },
+  { id: 'tsk-5', tagId: 'fitness',  title: 'Light walk, stretch or workout', completed: false, completedAt: null },
+  { id: 'tsk-6', tagId: 'misc',     title: 'Clear inbox and organize workspace', completed: false, completedAt: null }
 ];
 
 function formatMinutes(mins) {
