@@ -7,6 +7,7 @@ const SupabaseSync = {
   isConfigured: false,
   status: 'offline', // 'connected' | 'syncing' | 'offline' | 'error'
   statusListeners: [],
+  realtimeChannel: null,
 
   // Load configured keys from storage or fallback
   getConfig() {
@@ -42,6 +43,7 @@ const SupabaseSync = {
         this.isConfigured = true;
         this.setStatus('connected');
         console.log('[Supabase] Initialized successfully with project:', config.url);
+        this.initRealtime();
         return true;
       } catch (err) {
         console.error('[Supabase] Init error:', err);
@@ -161,6 +163,129 @@ const SupabaseSync = {
     }
   },
 
+  // 2.5 Routine Templates Operations
+  async fetchTemplates() {
+    if (!this.isConfigured || !this.client) return null;
+    try {
+      this.setStatus('syncing');
+      let templates = null;
+
+      // Primary strategy: planner_templates table
+      try {
+        const { data, error } = await this.client
+          .from('planner_templates')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && Array.isArray(data)) {
+          templates = data.map(row => ({
+            id: row.id,
+            name: row.name,
+            createdAt: row.created_at,
+            totalBlocks: row.total_blocks || 0,
+            tagIds: Array.isArray(row.tag_ids) ? row.tag_ids : [],
+            blocksData: (row.blocks_data && typeof row.blocks_data === 'object') ? row.blocks_data : {}
+          }));
+        }
+      } catch (tableErr) {}
+
+      // Fallback strategy: check planner_settings sentinel key __templates__
+      if (templates === null) {
+        try {
+          const { data, error } = await this.client
+            .from('planner_settings')
+            .select('value')
+            .eq('key', '__templates__')
+            .maybeSingle();
+
+          if (!error && data && Array.isArray(data.value)) {
+            templates = data.value;
+          }
+        } catch (fbErr) {}
+      }
+
+      this.setStatus('connected');
+      return templates;
+    } catch (err) {
+      console.warn('[Supabase] fetchTemplates failed:', err);
+      this.setStatus('error');
+      return null;
+    }
+  },
+
+  async upsertTemplate(template) {
+    if (!this.isConfigured || !this.client || !template) return;
+    try {
+      this.setStatus('syncing');
+
+      // Primary: upsert to planner_templates table
+      try {
+        await this.client
+          .from('planner_templates')
+          .upsert({
+            id: template.id,
+            name: template.name,
+            created_at: template.createdAt || new Date().toISOString(),
+            total_blocks: template.totalBlocks || 0,
+            tag_ids: template.tagIds || [],
+            blocks_data: template.blocksData || {},
+            updated_at: new Date().toISOString()
+          });
+      } catch (err) {}
+
+      // Fallback: sync all templates array into planner_settings under __templates__ key
+      if (typeof weeklyTemplates !== 'undefined' && Array.isArray(weeklyTemplates)) {
+        try {
+          await this.client
+            .from('planner_settings')
+            .upsert({
+              key: '__templates__',
+              value: weeklyTemplates,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'key' });
+        } catch (fbErr) {}
+      }
+
+      this.setStatus('connected');
+    } catch (e) {
+      console.error('[Supabase] upsertTemplate error:', e);
+      this.setStatus('error');
+    }
+  },
+
+  async deleteTemplate(templateId) {
+    if (!this.isConfigured || !this.client || !templateId) return;
+    try {
+      this.setStatus('syncing');
+
+      // Primary: delete from planner_templates table
+      try {
+        await this.client
+          .from('planner_templates')
+          .delete()
+          .eq('id', templateId);
+      } catch (err) {}
+
+      // Fallback: update __templates__ key in planner_settings
+      if (typeof weeklyTemplates !== 'undefined' && Array.isArray(weeklyTemplates)) {
+        try {
+          await this.client
+            .from('planner_settings')
+            .upsert({
+              key: '__templates__',
+              value: weeklyTemplates,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'key' });
+        } catch (fbErr) {}
+      }
+
+      this.setStatus('connected');
+    } catch (e) {
+      console.error('[Supabase] deleteTemplate error:', e);
+      this.setStatus('error');
+    }
+  },
+
   // 3. Planner Blocks Operations
   async fetchAllBlocks() {
     if (!this.isConfigured || !this.client) return null;
@@ -217,6 +342,35 @@ const SupabaseSync = {
       this.setStatus('connected');
       if (error) console.error('[Supabase] upsertBlock error:', error);
     } catch (e) {
+      this.setStatus('error');
+    }
+  },
+
+  async batchUpsertBlocks(blocksList) {
+    if (!this.isConfigured || !this.client || !Array.isArray(blocksList) || blocksList.length === 0) return;
+    try {
+      this.setStatus('syncing');
+      const rows = blocksList.map(item => ({
+        week_key: item.weekKey,
+        day_id: item.dayId,
+        block_index: item.blockIndex,
+        title: item.blockData.title || '',
+        status: item.blockData.status || 'pending',
+        tag_id: item.blockData.tagId || 'misc',
+        notes: item.blockData.notes || '',
+        block_tasks: item.blockData.blockTasks || {},
+        updated_at: new Date().toISOString()
+      }));
+
+      const chunkSize = 100;
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        const chunk = rows.slice(i, i + chunkSize);
+        const { error } = await this.client.from('planner_blocks').upsert(chunk);
+        if (error) console.error('[Supabase] batchUpsertBlocks error:', error);
+      }
+      this.setStatus('connected');
+    } catch (e) {
+      console.error('[Supabase] batchUpsertBlocks failed:', e);
       this.setStatus('error');
     }
   },
@@ -444,5 +598,48 @@ const SupabaseSync = {
 
     this.setStatus('connected');
     return true;
+  },
+
+  // 6. Realtime Subscription for Instant Multi-Device Sync
+  initRealtime() {
+    if (!this.isConfigured || !this.client || typeof this.client.channel !== 'function') return;
+
+    try {
+      if (this.realtimeChannel) {
+        this.client.removeChannel(this.realtimeChannel);
+        this.realtimeChannel = null;
+      }
+
+      this.realtimeChannel = this.client
+        .channel('planner_realtime_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_blocks' }, () => {
+          this.handleRemoteChange('blocks');
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_tags' }, () => {
+          this.handleRemoteChange('tags');
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_tasks' }, () => {
+          this.handleRemoteChange('tasks');
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_templates' }, () => {
+          this.handleRemoteChange('templates');
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_settings' }, () => {
+          this.handleRemoteChange('settings');
+        })
+        .subscribe();
+    } catch (err) {
+      console.warn('[Supabase] Realtime subscription init error:', err);
+    }
+  },
+
+  _remoteDebounceTimer: null,
+  handleRemoteChange(type) {
+    if (this._remoteDebounceTimer) clearTimeout(this._remoteDebounceTimer);
+    this._remoteDebounceTimer = setTimeout(() => {
+      if (typeof syncFromSupabase === 'function') {
+        syncFromSupabase();
+      }
+    }, 400);
   }
 };
