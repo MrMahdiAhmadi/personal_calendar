@@ -333,35 +333,13 @@ function closeTasksHubModal() {
   renderCurrentView();
 }
 
-/* 3. Custom Tags Modal (Now integrated in Settings Modal tab or standalone fallback) */
+/* 3. Custom Tags Modal (Delegates to Settings Modal Tags Tab) */
 function openTagsModal() {
-  // If settings modal has tags tab, switch to it, otherwise open standalone
-  const settingsModal = document.getElementById('settingsModal');
-  if (settingsModal) {
-    openSettingsModal('tags');
-    return;
-  }
-  const modal = document.getElementById('tagsModal');
-  const box = document.getElementById('tagsModalBox');
-  if (!modal || !box) return;
-  modal.classList.remove('hidden');
-  setTimeout(() => {
-    modal.classList.remove('opacity-0');
-    box.classList.remove('scale-95', 'translate-y-6');
-    box.classList.add('scale-100', 'translate-y-0');
-  }, 10);
+  openSettingsModal('tags');
 }
 
 function closeTagsModal() {
-  const modal = document.getElementById('tagsModal');
-  const box = document.getElementById('tagsModalBox');
-  if (!modal || !box) return;
-  modal.classList.add('opacity-0');
-  box.classList.remove('scale-100', 'translate-y-0');
-  box.classList.add('scale-95', 'translate-y-6');
-  setTimeout(() => {
-    modal.classList.add('hidden');
-  }, 200);
+  closeSettingsModal();
 }
 
 /* 3.5 Keyboard Shortcuts Modal */
