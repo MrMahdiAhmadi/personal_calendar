@@ -126,7 +126,13 @@ const SupabaseSync = {
         .order('created_at', { ascending: true });
       this.setStatus('connected');
       if (error) throw error;
-      return data ? data.map(d => ({ id: d.id, tagId: d.tag_id, title: d.title })) : null;
+      return data ? data.map(d => ({
+        id: d.id,
+        tagId: d.tag_id,
+        title: d.title,
+        completed: !!d.completed,
+        completedAt: d.completed_at || null
+      })) : null;
     } catch (err) {
       console.warn('[Supabase] fetchTasks failed:', err);
       this.setStatus('error');
@@ -138,11 +144,25 @@ const SupabaseSync = {
     if (!this.isConfigured || !this.client) return;
     try {
       this.setStatus('syncing');
+      const row = {
+        id: task.id,
+        tag_id: task.tagId,
+        title: task.title,
+        completed: !!task.completed,
+        completed_at: task.completedAt || null
+      };
       const { error } = await this.client
         .from('planner_tasks')
-        .upsert({ id: task.id, tag_id: task.tagId, title: task.title });
+        .upsert(row);
       this.setStatus('connected');
-      if (error) console.error('[Supabase] upsertTask error:', error);
+      if (error) {
+        // Fallback for older schema without completed column
+        if (error.message && error.message.includes('column "completed"')) {
+          await this.client.from('planner_tasks').upsert({ id: task.id, tag_id: task.tagId, title: task.title });
+        } else {
+          console.error('[Supabase] upsertTask error:', error);
+        }
+      }
     } catch (e) {
       this.setStatus('error');
     }
@@ -542,9 +562,19 @@ const SupabaseSync = {
 
     // 2. Tasks
     if (Array.isArray(payload.sharedTasksBank) && payload.sharedTasksBank.length > 0) {
-      const taskRows = payload.sharedTasksBank.map(t => ({ id: t.id, tag_id: t.tagId, title: t.title }));
+      const taskRows = payload.sharedTasksBank.map(t => ({
+        id: t.id,
+        tag_id: t.tagId,
+        title: t.title,
+        completed: !!t.completed,
+        completed_at: t.completedAt || null
+      }));
       const { error: taskErr } = await this.client.from('planner_tasks').upsert(taskRows);
-      if (taskErr) console.error('Migrate tasks error:', taskErr);
+      if (taskErr) {
+        // Fallback if column not present
+        const simpleRows = payload.sharedTasksBank.map(t => ({ id: t.id, tag_id: t.tagId, title: t.title }));
+        await this.client.from('planner_tasks').upsert(simpleRows);
+      }
     }
 
     // 3. Settings (workBlockMins & breakBlockMins)

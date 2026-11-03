@@ -223,12 +223,19 @@ const I18N = {
       // Tasks Hub Modal
       hub_modal_title: "Shared Task Bank by Category",
       hub_modal_sub: "Tasks assigned to each category are accessible across all matching blocks",
-      hub_all_tags: "All Categories",
+      hub_all_tags: "Active Tasks",
+      hub_archive_tab: "Archived / Done",
       hub_new_task_ph: "New task title for this category...",
       hub_add_task_btn: "Add Task",
       hub_summary_text: "Filtered Tasks",
+      hub_summary_archive: "Archived Tasks",
+      hub_restore_task: "Restore to Active",
+      hub_completed_badge: "Completed",
       hub_empty_msg: "No tasks registered in this category yet. Add one using the form above.",
+      hub_archive_empty_msg: "No completed or archived tasks yet.",
       hub_done_btn: "Done",
+      toast_task_restored: "Task restored to active list.",
+      toast_task_archived: "Task completed and archived.",
 
       // Tags Modal
       tags_modal_title: "Manage Custom Tags",
@@ -525,12 +532,19 @@ const I18N = {
       // Tasks Hub Modal
       hub_modal_title: "بانک تسک‌های مشترک حوزه‌ها",
       hub_modal_sub: "تسک‌های هر حوزه در تمام بلاک‌های دارای آن تگ در دسترس خواهند بود",
-      hub_all_tags: "همه حوزه‌ها",
+      hub_all_tags: "تسک‌های فعال",
+      hub_archive_tab: "آرشیو شده‌ها / انجام‌شده",
       hub_new_task_ph: "عنوان تسک جدید برای این حوزه...",
       hub_add_task_btn: "افزودن تسک",
       hub_summary_text: "نمایش تسک‌های فیلترشده",
+      hub_summary_archive: "تسک‌های آرشیو و تکمیل‌شده",
+      hub_restore_task: "بازگردانی به تسک‌های فعال",
+      hub_completed_badge: "انجام شد",
       hub_empty_msg: "تسکی در این حوزه ثبت نشده است. از فرم بالا تسک جدید اضافه کنید.",
+      hub_archive_empty_msg: "هیچ تسک تکمیل یا آرشیو‌شده‌ای وجود ندارد.",
       hub_done_btn: "تأیید و بستن",
+      toast_task_restored: "تسک به لیست کارهای فعال بازگردانده شد.",
+      toast_task_archived: "تسک انجام و به آرشیو منتقل شد.",
 
       // Tags Modal
       tags_modal_title: "مدیریت برچسب‌های رنگی",

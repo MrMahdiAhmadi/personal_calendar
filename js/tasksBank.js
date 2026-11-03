@@ -7,7 +7,9 @@ function renderTasksHubFilterTabs() {
   if (!tabs) return;
   tabs.innerHTML = '';
 
-  // All tab
+  const isRtl = document.documentElement.dir === 'rtl';
+
+  // All active tasks tab
   const allBtn = document.createElement('button');
   allBtn.className = `px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${activeHubFilterTag === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'}`;
   allBtn.textContent = I18N.t('hub_all_tags');
@@ -18,7 +20,7 @@ function renderTasksHubFilterTabs() {
   };
   tabs.appendChild(allBtn);
 
-  // Specific tags tabs
+  // Specific tags tabs (active tasks only)
   customTags.forEach(t => {
     const btn = document.createElement('button');
     const isActive = activeHubFilterTag === t.id;
@@ -39,6 +41,25 @@ function renderTasksHubFilterTabs() {
     };
     tabs.appendChild(btn);
   });
+
+  // Archive / Completed tasks tab
+  const archivedCount = sharedTasksBank.filter(t => !!t.completed).length;
+  const archiveBtn = document.createElement('button');
+  const isArchiveActive = activeHubFilterTag === 'archive';
+  archiveBtn.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ${isArchiveActive ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'}`;
+  archiveBtn.innerHTML = `
+    <i data-lucide="archive" class="w-3.5 h-3.5"></i>
+    <span>${I18N.t('hub_archive_tab')}</span>
+    <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isArchiveActive ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'} font-mono">${archivedCount}</span>
+  `;
+  archiveBtn.onclick = () => {
+    activeHubFilterTag = 'archive';
+    renderTasksHubFilterTabs();
+    renderTasksHubList();
+  };
+  tabs.appendChild(archiveBtn);
+
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function renderTasksHubList() {
@@ -46,15 +67,32 @@ function renderTasksHubList() {
   if (!container) return;
   container.innerHTML = '';
 
-  const filtered = sharedTasksBank.filter(t => activeHubFilterTag === 'all' || t.tagId === activeHubFilterTag);
+  const isRtl = document.documentElement.dir === 'rtl';
+
+  let filtered = [];
+  const isArchiveView = activeHubFilterTag === 'archive';
+
+  if (isArchiveView) {
+    filtered = sharedTasksBank.filter(t => !!t.completed);
+  } else if (activeHubFilterTag === 'all') {
+    filtered = sharedTasksBank.filter(t => !t.completed);
+  } else {
+    filtered = sharedTasksBank.filter(t => !t.completed && t.tagId === activeHubFilterTag);
+  }
+
+  const summaryEl = document.getElementById('tasksHubListSummary');
+  if (summaryEl) {
+    summaryEl.textContent = isArchiveView ? I18N.t('hub_summary_archive') : I18N.t('hub_summary_text');
+  }
+
   const totalCountEl = document.getElementById('tasksHubTotalCount');
   if (totalCountEl) totalCountEl.textContent = `${filtered.length} ${I18N.t('tasks_short')}`;
 
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="text-center py-8 text-xs text-slate-400">
-        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-        ${I18N.t('hub_empty_msg')}
+        <i data-lucide="${isArchiveView ? 'archive' : 'inbox'}" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+        ${isArchiveView ? I18N.t('hub_archive_empty_msg') : I18N.t('hub_empty_msg')}
       </div>
     `;
     if (window.lucide) window.lucide.createIcons();
@@ -65,21 +103,57 @@ function renderTasksHubList() {
     const tag = getTagById(task.tagId);
     const item = document.createElement('div');
     item.className = 'flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60 text-xs transition hover:shadow-sm';
-    item.style.borderRight = `3px solid ${tag.color}`;
 
-    item.innerHTML = `
-      <div class="flex items-center gap-2 flex-1">
-        <span class="text-[10px] px-2 py-0.5 rounded-md font-semibold" style="background-color: ${tag.color}22; color: ${tag.color}">
-          ${escapeHtml(tag.name)}
-        </span>
-        <input type="text" value="${escapeHtml(task.title)}" onchange="updateSharedTaskTitle('${task.id}', this.value)" class="flex-1 bg-transparent border-b border-transparent focus:border-indigo-500 focus:outline-none text-slate-900 dark:text-white py-0.5 font-medium">
-      </div>
-      <div class="flex items-center gap-1">
-        <button onclick="deleteSharedTask('${task.id}')" class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Delete">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-        </button>
-      </div>
-    `;
+    if (isRtl) {
+      item.style.borderRight = `3px solid ${tag.color}`;
+      item.style.borderLeft = 'none';
+    } else {
+      item.style.borderLeft = `3px solid ${tag.color}`;
+      item.style.borderRight = 'none';
+    }
+
+    if (task.completed) {
+      item.innerHTML = `
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+          <span class="text-[10px] px-2 py-0.5 rounded-md font-semibold flex-shrink-0" style="background-color: ${tag.color}22; color: ${tag.color}">
+            ${escapeHtml(tag.name)}
+          </span>
+          <span class="flex-1 truncate line-through text-slate-400 font-medium">
+            ${escapeHtml(task.title)}
+          </span>
+          <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1 flex-shrink-0">
+            <i data-lucide="check" class="w-3 h-3"></i>
+            <span>${I18N.t('hub_completed_badge')}</span>
+          </span>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button onclick="restoreSharedTaskFromArchive('${task.id}')" class="p-1.5 text-slate-500 hover:text-emerald-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="${I18N.t('hub_restore_task')}">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="deleteSharedTask('${task.id}')" class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Delete">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      item.innerHTML = `
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+          <span class="text-[10px] px-2 py-0.5 rounded-md font-semibold flex-shrink-0" style="background-color: ${tag.color}22; color: ${tag.color}">
+            ${escapeHtml(tag.name)}
+          </span>
+          <input type="text" value="${escapeHtml(task.title)}" onchange="updateSharedTaskTitle('${task.id}', this.value)" class="flex-1 bg-transparent border-b border-transparent focus:border-indigo-500 focus:outline-none text-slate-900 dark:text-white py-0.5 font-medium">
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button onclick="archiveSharedTaskDirectly('${task.id}')" class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="${I18N.t('quick_completed')}">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="deleteSharedTask('${task.id}')" class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Delete">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      `;
+    }
+
     container.appendChild(item);
   });
 
@@ -95,7 +169,9 @@ function addSharedTaskFromHub() {
   const newTask = {
     id: 'tsk-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
     tagId: tagId,
-    title: title
+    title: title,
+    completed: false,
+    completedAt: null
   };
 
   sharedTasksBank.push(newTask);
@@ -129,13 +205,53 @@ function deleteSharedTask(id) {
   showToast(I18N.t('toast_task_deleted'));
 }
 
+function archiveSharedTaskDirectly(taskId) {
+  const task = sharedTasksBank.find(t => t.id === taskId);
+  if (task) {
+    task.completed = true;
+    task.completedAt = new Date().toISOString();
+    saveTasksBank();
+    if (SupabaseSync.isConfigured) {
+      SupabaseSync.upsertTask(task);
+    }
+    renderTasksHubFilterTabs();
+    renderTasksHubList();
+    showToast(I18N.t('toast_task_archived'));
+  }
+}
+
+function restoreSharedTaskFromArchive(taskId) {
+  const task = sharedTasksBank.find(t => t.id === taskId);
+  if (task) {
+    task.completed = false;
+    task.completedAt = null;
+    saveTasksBank();
+    if (SupabaseSync.isConfigured) {
+      SupabaseSync.upsertTask(task);
+    }
+    renderTasksHubFilterTabs();
+    renderTasksHubList();
+    showToast(I18N.t('toast_task_restored'));
+  }
+}
+
 /* Block Modal Task Checklist */
 function renderModalBlockTasks() {
   if (!activeModalTarget) return;
   const { weekKey, dayId, blockIndex } = activeModalTarget;
   const block = getBlockData(weekKey, dayId, blockIndex);
   const selectedTagId = document.getElementById('modalTagSelect').value;
-  const tagTasks = sharedTasksBank.filter(t => t.tagId === selectedTagId);
+
+  // Filter tasks for this tag:
+  // Show active tasks, PLUS any task that was already assigned to this block (even if now completed)
+  // But do NOT show completed/archived tasks from other blocks or unassigned completed tasks!
+  const tagTasks = sharedTasksBank.filter(t => {
+    if (t.tagId !== selectedTagId) return false;
+    const isAssignedToThisBlock = block.blockTasks && block.blockTasks[t.id] && block.blockTasks[t.id].assigned;
+    if (isAssignedToThisBlock) return true;
+    return !t.completed;
+  });
+
   const listEl = document.getElementById('modalTagTasksList');
   if (!listEl) return;
   listEl.innerHTML = '';
@@ -192,12 +308,30 @@ function toggleBlockTaskCompleted(taskId) {
   const { weekKey, dayId, blockIndex } = activeModalTarget;
   const block = getBlockData(weekKey, dayId, blockIndex);
   if (block.blockTasks && block.blockTasks[taskId]) {
-    block.blockTasks[taskId].completed = !block.blockTasks[taskId].completed;
+    const isNowCompleted = !block.blockTasks[taskId].completed;
+    block.blockTasks[taskId].completed = isNowCompleted;
+
+    // Synchronize with central Task Bank
+    const bankTask = sharedTasksBank.find(t => t.id === taskId);
+    if (bankTask) {
+      bankTask.completed = isNowCompleted;
+      bankTask.completedAt = isNowCompleted ? new Date().toISOString() : null;
+      saveTasksBank();
+      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+        SupabaseSync.upsertTask(bankTask);
+      }
+    }
+
     saveAppData();
     if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
       SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
     }
     renderModalBlockTasks();
+    renderCurrentView();
+
+    if (isNowCompleted) {
+      showToast(I18N.t('toast_task_archived'));
+    }
   }
 }
 
@@ -210,7 +344,9 @@ function addQuickTaskFromBlock() {
   const newTask = {
     id: 'tsk-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
     tagId: currentTagId,
-    title: title
+    title: title,
+    completed: false,
+    completedAt: null
   };
 
   sharedTasksBank.push(newTask);
