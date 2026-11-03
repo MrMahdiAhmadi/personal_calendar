@@ -113,8 +113,6 @@ html[dir="rtl"] .sticky-time-col {
   /* Bottom sheet modal styling for mobile screens */
   #modalBox,
   #tasksHubBox,
-  #tagsModalBox,
-  #supabaseModalBox,
   #pasteBackupBox,
   #settingsModalBox,
   #insightsModalBox {

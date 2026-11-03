@@ -506,12 +506,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const openTagsMgrFromModal = document.getElementById('openTagsMgrFromModal');
   if (openTagsMgrFromModal) openTagsMgrFromModal.addEventListener('click', openTagsModal);
 
-  const closeTagsModalBtn = document.getElementById('closeTagsModalBtn');
-  if (closeTagsModalBtn) closeTagsModalBtn.addEventListener('click', closeTagsModal);
-
-  const doneTagsModalBtn = document.getElementById('doneTagsModalBtn');
-  if (doneTagsModalBtn) doneTagsModalBtn.addEventListener('click', closeTagsModal);
-
   const addNewTagBtn = document.getElementById('addNewTagBtn');
   if (addNewTagBtn) addNewTagBtn.addEventListener('click', addNewCustomTag);
 
@@ -530,12 +524,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const tagsModal = document.getElementById('tagsModal');
-  if (tagsModal) {
-    tagsModal.addEventListener('click', (e) => {
-      if (e.target.id === 'tagsModal') closeTagsModal();
-    });
-  }
   const tmplModal = document.getElementById('templatesModal');
   if (tmplModal) {
     tmplModal.addEventListener('click', (e) => {
@@ -548,12 +536,6 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('confirmDialog').addEventListener('click', (e) => {
     if (e.target.id === 'confirmDialog') closeConfirmDialog();
   });
-  const sbModal = document.getElementById('supabaseModal');
-  if (sbModal) {
-    sbModal.addEventListener('click', (e) => {
-      if (e.target.id === 'supabaseModal') closeSupabaseModal();
-    });
-  }
 
   // 21. Global Keyboard Navigation & Shortcuts
   window.addEventListener('keydown', (e) => {
