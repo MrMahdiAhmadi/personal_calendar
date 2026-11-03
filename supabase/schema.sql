@@ -40,17 +40,30 @@ create table if not exists public.planner_settings (
   updated_at timestamptz default timezone('utc'::text, now()) not null
 );
 
+-- 5. Planner Routine Templates Table
+create table if not exists public.planner_templates (
+  id text primary key,
+  name text not null,
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  total_blocks integer default 0 not null,
+  tag_ids jsonb default '[]'::jsonb not null,
+  blocks_data jsonb default '{}'::jsonb not null,
+  updated_at timestamptz default timezone('utc'::text, now()) not null
+);
+
 -- Indexes for performance
 create index if not exists idx_planner_tasks_tag_id on public.planner_tasks (tag_id);
 create index if not exists idx_planner_blocks_week_key on public.planner_blocks (week_key);
 create index if not exists idx_planner_blocks_week_day on public.planner_blocks (week_key, day_id);
 create index if not exists idx_planner_blocks_tag_id on public.planner_blocks (tag_id);
+create index if not exists idx_planner_templates_created_at on public.planner_templates (created_at desc);
 
 -- Enable Row Level Security (RLS) on all exposed tables
 alter table public.planner_tags enable row level security;
 alter table public.planner_tasks enable row level security;
 alter table public.planner_blocks enable row level security;
 alter table public.planner_settings enable row level security;
+alter table public.planner_templates enable row level security;
 
 -- Grant permissions to public (anon) and authenticated roles
 grant usage on schema public to anon, authenticated;
@@ -58,6 +71,7 @@ grant all on table public.planner_tags to anon, authenticated;
 grant all on table public.planner_tasks to anon, authenticated;
 grant all on table public.planner_blocks to anon, authenticated;
 grant all on table public.planner_settings to anon, authenticated;
+grant all on table public.planner_templates to anon, authenticated;
 
 -- Policies for public calendar access
 create policy "Allow all access to planner_tags"
@@ -66,6 +80,20 @@ create policy "Allow all access to planner_tags"
   to anon, authenticated
   using (true)
   with check (true);
+
+create policy "Allow all access to planner_templates"
+  on public.planner_templates
+  for all
+  to anon, authenticated
+  using (true)
+  with check (true);
+
+-- Enable Supabase Realtime publication for immediate live updates across clients
+alter publication supabase_realtime add table public.planner_tags;
+alter publication supabase_realtime add table public.planner_tasks;
+alter publication supabase_realtime add table public.planner_blocks;
+alter publication supabase_realtime add table public.planner_settings;
+alter publication supabase_realtime add table public.planner_templates;
 
 create policy "Allow all access to planner_tasks"
   on public.planner_tasks

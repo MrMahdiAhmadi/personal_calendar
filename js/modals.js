@@ -221,6 +221,9 @@ function promptDeleteTemplate(templateId) {
     () => {
       weeklyTemplates = weeklyTemplates.filter(t => t.id !== templateId);
       saveTemplatesData();
+      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+        SupabaseSync.deleteTemplate(templateId);
+      }
       renderTemplatesList();
       showToast(I18N.t('toast_template_deleted'));
     }
@@ -662,13 +665,19 @@ function saveSettingsModalChanges() {
         workBlockMins: workMins,
         breakBlockMins: breakMins,
         bedtime: newBedtime,
-        wakeTime: newWakeTime
+        wakeTime: newWakeTime,
+        timezone: newTz,
+        calendarType: newCal,
+        language: newLang
       });
     } else if (typeof SupabaseSync.upsertSetting === 'function') {
       SupabaseSync.upsertSetting('workBlockMins', workMins);
       SupabaseSync.upsertSetting('breakBlockMins', breakMins);
       SupabaseSync.upsertSetting('bedtime', newBedtime);
       SupabaseSync.upsertSetting('wakeTime', newWakeTime);
+      SupabaseSync.upsertSetting('timezone', newTz);
+      SupabaseSync.upsertSetting('calendarType', newCal);
+      SupabaseSync.upsertSetting('language', newLang);
     }
   }
 

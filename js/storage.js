@@ -148,11 +148,12 @@ async function syncFromSupabase() {
   if (!SupabaseSync.isConfigured) return;
 
   try {
-    const [cloudTags, cloudTasks, cloudBlocks, cloudSettings] = await Promise.all([
+    const [cloudTags, cloudTasks, cloudBlocks, cloudSettings, cloudTemplates] = await Promise.all([
       SupabaseSync.fetchTags(),
       SupabaseSync.fetchTasks(),
       SupabaseSync.fetchAllBlocks(),
-      SupabaseSync.fetchSettings ? SupabaseSync.fetchSettings() : Promise.resolve(null)
+      SupabaseSync.fetchSettings ? SupabaseSync.fetchSettings() : Promise.resolve(null),
+      SupabaseSync.fetchTemplates ? SupabaseSync.fetchTemplates() : Promise.resolve(null)
     ]);
 
     let changed = false;
@@ -163,6 +164,9 @@ async function syncFromSupabase() {
       const rawBreak = cloudSettings.breakBlockMins;
       const rawBed = cloudSettings.bedtime;
       const rawWake = cloudSettings.wakeTime;
+      const rawTz = cloudSettings.timezone;
+      const rawCal = cloudSettings.calendarType;
+      const rawLang = cloudSettings.language;
 
       const cloudWork = rawWork !== undefined ? parseInt(rawWork, 10) : NaN;
       const cloudBreak = rawBreak !== undefined ? parseInt(rawBreak, 10) : NaN;
@@ -182,6 +186,21 @@ async function syncFromSupabase() {
       if (rawWake && typeof rawWake === 'string' && rawWake !== AppSettings.get('wakeTime')) {
         AppSettings.set('wakeTime', rawWake);
         scheduleNeedsRebuild = true;
+      }
+      if (rawTz && typeof rawTz === 'string' && rawTz !== AppSettings.get('timezone')) {
+        AppSettings.set('timezone', rawTz);
+        changed = true;
+      }
+      if (rawCal && typeof rawCal === 'string' && rawCal !== AppSettings.get('calendarType')) {
+        AppSettings.set('calendarType', rawCal);
+        changed = true;
+      }
+      if (rawLang && typeof rawLang === 'string' && rawLang !== AppSettings.get('language')) {
+        AppSettings.set('language', rawLang);
+        if (typeof I18N !== 'undefined' && I18N.setLanguage && I18N.currentLang !== rawLang) {
+          I18N.setLanguage(rawLang);
+        }
+        changed = true;
       }
 
       if (scheduleNeedsRebuild && typeof generateScheduleDefinition === 'function') {
@@ -228,6 +247,13 @@ async function syncFromSupabase() {
       changed = true;
     }
 
+    if (cloudTemplates && Array.isArray(cloudTemplates)) {
+      weeklyTemplates = cloudTemplates;
+      SafeStorage.setItem(CONFIG.TEMPLATES_KEY, JSON.stringify(weeklyTemplates));
+      if (typeof renderTemplatesList === 'function') renderTemplatesList();
+      changed = true;
+    }
+
     if (changed) {
       if (typeof renderDayTabs === 'function') renderDayTabs();
       renderCurrentView();
@@ -265,8 +291,16 @@ function saveTasksBank() {
   renderCurrentView();
 }
 
-function saveTemplatesData() {
+function saveTemplatesData(templateToSync = null) {
   SafeStorage.setItem(CONFIG.TEMPLATES_KEY, JSON.stringify(weeklyTemplates));
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+    if (templateToSync) {
+      SupabaseSync.upsertTemplate(templateToSync);
+    } else {
+      // Sync all or save fallback
+      weeklyTemplates.forEach(t => SupabaseSync.upsertTemplate(t));
+    }
+  }
 }
 
 // Check if a week has any user-entered content (titles, notes, or tasks)
@@ -367,12 +401,15 @@ function applyRoutineToWeek(targetWeekKey, routineBlocksData) {
   weeksData[targetWeekKey] = {};
   ensureWeekStructure(targetWeekKey);
 
+  const blocksToSync = [];
+
   DAYS_OF_WEEK.forEach(day => {
     const dayRoutine = (routineBlocksData && routineBlocksData[day.id]) || {};
     Object.keys(dayRoutine).forEach(bIdx => {
       const blk = dayRoutine[bIdx];
+      const parsedIdx = parseInt(bIdx, 10);
       // Clone deeply to avoid reference mutations
-      weeksData[targetWeekKey][day.id][bIdx] = {
+      const blockObj = {
         title: blk.title || '',
         status: 'pending',
         tagId: blk.tagId || 'misc',
@@ -380,14 +417,28 @@ function applyRoutineToWeek(targetWeekKey, routineBlocksData) {
         blockTasks: JSON.parse(JSON.stringify(blk.blockTasks || {})),
         pomodoro: { sessions: 0, totalFocusMinutes: 0 }
       };
+      weeksData[targetWeekKey][day.id][parsedIdx] = blockObj;
 
-      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
-        SupabaseSync.upsertBlock(targetWeekKey, day.id, parseInt(bIdx, 10), weeksData[targetWeekKey][day.id][bIdx]);
-      }
+      blocksToSync.push({
+        weekKey: targetWeekKey,
+        dayId: day.id,
+        blockIndex: parsedIdx,
+        blockData: blockObj
+      });
     });
   });
 
   saveAppData();
+
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && blocksToSync.length > 0) {
+    if (typeof SupabaseSync.batchUpsertBlocks === 'function') {
+      SupabaseSync.batchUpsertBlocks(blocksToSync);
+    } else {
+      blocksToSync.forEach(item => {
+        SupabaseSync.upsertBlock(item.weekKey, item.dayId, item.blockIndex, item.blockData);
+      });
+    }
+  }
 }
 
 function ensureWeekStructure(weekKey) {

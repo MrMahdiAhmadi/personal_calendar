@@ -180,6 +180,10 @@ function toggleBlockTaskAssigned(taskId, isAssigned) {
     block.blockTasks[taskId] = { assigned: false, completed: false };
   }
   block.blockTasks[taskId].assigned = isAssigned;
+  saveAppData();
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+    SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+  }
   renderModalBlockTasks();
 }
 
@@ -189,6 +193,10 @@ function toggleBlockTaskCompleted(taskId) {
   const block = getBlockData(weekKey, dayId, blockIndex);
   if (block.blockTasks && block.blockTasks[taskId]) {
     block.blockTasks[taskId].completed = !block.blockTasks[taskId].completed;
+    saveAppData();
+    if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+      SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+    }
     renderModalBlockTasks();
   }
 }
@@ -218,6 +226,10 @@ function addQuickTaskFromBlock() {
     const block = getBlockData(weekKey, dayId, blockIndex);
     if (!block.blockTasks) block.blockTasks = {};
     block.blockTasks[newTask.id] = { assigned: true, completed: false };
+    saveAppData();
+    if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+      SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+    }
   }
 
   input.value = '';
