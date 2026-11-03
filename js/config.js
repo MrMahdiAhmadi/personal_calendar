@@ -26,7 +26,9 @@ const DEFAULT_SETTINGS = {
   workBlockMins: 90,        // valid range 10-180, step 5
   breakBlockMins: 30,       // valid range 5-60, step 5
   bedtime: '23:30',         // 'HH:mm' format
-  wakeTime: '07:30'         // 'HH:mm' format
+  wakeTime: '07:30',        // 'HH:mm' format
+  autoSyncInterval: 60,     // minutes, default 60 (1 hour). 0 means disabled
+  autoSyncEnabled: true     // boolean
 };
 
 const DAYS_OF_WEEK = [

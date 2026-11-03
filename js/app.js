@@ -491,7 +491,17 @@ window.addEventListener('DOMContentLoaded', () => {
   const applyPasteBackupBtn = document.getElementById('applyPasteBackupBtn');
   if (applyPasteBackupBtn) applyPasteBackupBtn.addEventListener('click', applyPastedBackup);
 
-  // 17. Jump to current active block
+  // 17. Manual Database Sync Button Listener
+  const manualSyncBtn = document.getElementById('manualSyncBtn');
+  if (manualSyncBtn) {
+    manualSyncBtn.addEventListener('click', () => {
+      if (typeof triggerDatabaseSync === 'function') {
+        triggerDatabaseSync(true);
+      }
+    });
+  }
+
+  // 17b. Jump to current active block
   document.getElementById('jumpCurrentBtn').addEventListener('click', scrollToCurrentBlock);
 
   // 18. Block Modal listeners

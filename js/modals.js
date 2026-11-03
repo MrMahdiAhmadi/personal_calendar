@@ -540,6 +540,14 @@ function openSettingsModal(defaultTab = 'preferences') {
     updateSupabaseModalStatus();
   }
 
+  // Populate Auto Sync Interval
+  const autoSyncIntervalSelect = document.getElementById('settingsAutoSyncInterval');
+  if (autoSyncIntervalSelect && typeof AppSettings !== 'undefined') {
+    const isAutoSyncEnabled = AppSettings.get('autoSyncEnabled') !== false;
+    const intervalVal = isAutoSyncEnabled ? (AppSettings.get('autoSyncInterval') !== undefined ? AppSettings.get('autoSyncInterval') : 60) : 0;
+    autoSyncIntervalSelect.value = String(intervalVal);
+  }
+
   renderCustomTagsList();
 
   const modal = document.getElementById('settingsModal');
@@ -723,9 +731,27 @@ function updateSupabaseModalStatus() {
 async function saveSupabaseSettings() {
   const url = document.getElementById('sbUrlInput').value.trim();
   const key = document.getElementById('sbKeyInput').value.trim();
+  const autoSyncSelect = document.getElementById('settingsAutoSyncInterval');
 
   SupabaseSync.saveConfig(url, key);
   updateSupabaseModalStatus();
+
+  // Save Auto Sync preferences
+  if (autoSyncSelect && typeof AppSettings !== 'undefined') {
+    const intervalVal = parseInt(autoSyncSelect.value, 10);
+    if (!isNaN(intervalVal)) {
+      if (intervalVal === 0) {
+        AppSettings.set('autoSyncEnabled', false);
+        AppSettings.set('autoSyncInterval', 0);
+      } else {
+        AppSettings.set('autoSyncEnabled', true);
+        AppSettings.set('autoSyncInterval', intervalVal);
+      }
+      if (typeof restartAutoSync === 'function') {
+        restartAutoSync();
+      }
+    }
+  }
 
   if (SupabaseSync.isConfigured) {
     showToast(I18N.t('toast_cloud_saved'));

@@ -142,6 +142,124 @@ function loadAppData() {
 
   // Asynchronously sync from Supabase if connected
   syncFromSupabase();
+
+  // Initialize auto-sync scheduler
+  initAutoSync();
+}
+
+let autoSyncTimerId = null;
+
+function initAutoSync() {
+  stopAutoSync();
+
+  const enabled = AppSettings.get('autoSyncEnabled') !== false;
+  const intervalMins = parseInt(AppSettings.get('autoSyncInterval'), 10);
+
+  // If enabled and interval > 0, schedule periodic sync
+  if (enabled && !isNaN(intervalMins) && intervalMins > 0) {
+    const ms = intervalMins * 60 * 1000;
+    autoSyncTimerId = setInterval(() => {
+      console.log(`[AutoSync] Triggering scheduled sync (${intervalMins}m interval)...`);
+      triggerDatabaseSync(false);
+    }, ms);
+    console.log(`[AutoSync] Scheduled every ${intervalMins} minutes.`);
+  } else {
+    console.log('[AutoSync] Disabled.');
+  }
+}
+
+function stopAutoSync() {
+  if (autoSyncTimerId) {
+    clearInterval(autoSyncTimerId);
+    autoSyncTimerId = null;
+  }
+}
+
+function restartAutoSync() {
+  initAutoSync();
+}
+
+let isSyncInProgress = false;
+
+async function triggerDatabaseSync(interactive = false) {
+  if (isSyncInProgress) {
+    if (interactive) {
+      showToast(typeof I18N !== 'undefined' ? I18N.t('toast_sync_manual_started') : 'Syncing database...');
+    }
+    return;
+  }
+
+  // Check if Supabase is configured
+  if (!SupabaseSync.isConfigured) {
+    if (interactive) {
+      const msg = typeof I18N !== 'undefined'
+        ? I18N.t('toast_sync_not_configured')
+        : 'Supabase is not configured yet. Open Settings > Cloud Sync to configure.';
+      showToast(msg);
+      if (typeof openSettingsModal === 'function') {
+        openSettingsModal('cloud');
+      }
+    }
+    return;
+  }
+
+  // Check network status
+  if (!navigator.onLine) {
+    if (interactive) {
+      const offlineMsg = typeof I18N !== 'undefined'
+        ? I18N.t('offline_tooltip')
+        : 'No internet connection. Working fully offline from local cache.';
+      showToast(offlineMsg);
+    }
+    return;
+  }
+
+  isSyncInProgress = true;
+  setManualSyncBtnSpinning(true);
+
+  if (interactive) {
+    const startMsg = typeof I18N !== 'undefined'
+      ? I18N.t('toast_sync_manual_started')
+      : 'Syncing database...';
+    showToast(startMsg);
+  }
+
+  try {
+    await syncFromSupabase();
+    if (interactive) {
+      const successMsg = typeof I18N !== 'undefined'
+        ? I18N.t('toast_sync_manual_success')
+        : 'Database synced successfully ☁️';
+      showToast(successMsg);
+    }
+  } catch (err) {
+    console.error('[Sync] Manual/scheduled sync error:', err);
+    if (interactive) {
+      showToast('Error syncing with database.');
+    }
+  } finally {
+    isSyncInProgress = false;
+    setManualSyncBtnSpinning(false);
+  }
+}
+
+function setManualSyncBtnSpinning(isSpinning) {
+  const syncBtn = document.getElementById('manualSyncBtn');
+  const syncIcon = document.getElementById('manualSyncIcon');
+  if (syncBtn) {
+    if (isSpinning) {
+      syncBtn.classList.add('pointer-events-none', 'opacity-70');
+    } else {
+      syncBtn.classList.remove('pointer-events-none', 'opacity-70');
+    }
+  }
+  if (syncIcon) {
+    if (isSpinning) {
+      syncIcon.classList.add('animate-spin');
+    } else {
+      syncIcon.classList.remove('animate-spin');
+    }
+  }
 }
 
 async function syncFromSupabase() {
