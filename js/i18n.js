@@ -70,6 +70,18 @@ const I18N = {
       settings_tab_backup: "Backup & Data",
       settings_tab_tags: "Category Tags",
 
+      // Database Sync & Auto Sync
+      sync_db_btn: "Sync Database",
+      auto_sync_label: "Automatic Cloud Sync",
+      auto_sync_desc: "Periodically sync schedule data with Supabase in the background. Default is 1 hour.",
+      auto_sync_interval_label: "Interval:",
+      auto_sync_disabled: "Disabled (Off)",
+      auto_sync_mins: "{mins} minutes",
+      auto_sync_hours: "{hours} hour(s)",
+      toast_sync_manual_started: "Syncing database...",
+      toast_sync_manual_success: "Database synced successfully ☁️",
+      toast_sync_not_configured: "Supabase cloud database is not configured yet.",
+
       // Mobile Bottom Navigation
       nav_today: "Today",
       nav_week: "Week",
@@ -359,6 +371,18 @@ const I18N = {
       settings_tab_cloud: "همگام‌سازی ابری",
       settings_tab_backup: "پشتیبان و پاکسازی",
       settings_tab_tags: "برچسب‌ها",
+
+      // Database Sync & Auto Sync
+      sync_db_btn: "همگام‌سازی دیتابیس",
+      auto_sync_label: "همگام‌سازی خودکار دیتابیس",
+      auto_sync_desc: "همگام‌سازی دوره‌ای و خودکار اطلاعات با سوپابیس در پس‌زمینه (پیش‌فرض: هر ۱ ساعت یک بار).",
+      auto_sync_interval_label: "فاصله زمانی:",
+      auto_sync_disabled: "غیرفعال (خاموش)",
+      auto_sync_mins: "{mins} دقیقه",
+      auto_sync_hours: "{hours} ساعت",
+      toast_sync_manual_started: "در حال همگام‌سازی با دیتابیس...",
+      toast_sync_manual_success: "دیتابیس با موفقیت همگام‌سازی شد ☁️",
+      toast_sync_not_configured: "پایگاه داده ابری هنوز متصل نشده است.",
 
       // Mobile Bottom Navigation
       nav_today: "امروز",
@@ -665,6 +689,24 @@ const I18N = {
     const switchBtn = document.getElementById('langSwitchLabel');
     if (switchBtn) {
       switchBtn.textContent = lang === 'en' ? 'فارسی' : 'English';
+    }
+
+    // Update Auto-Sync interval options dynamically
+    const autoSyncSelect = document.getElementById('settingsAutoSyncInterval');
+    if (autoSyncSelect) {
+      const currentVal = autoSyncSelect.value;
+      const opts = [
+        { val: "15", label: lang === 'fa' ? "۱۵ دقیقه" : "15 minutes" },
+        { val: "30", label: lang === 'fa' ? "۳۰ دقیقه" : "30 minutes" },
+        { val: "60", label: lang === 'fa' ? "۱ ساعت (پیش‌فرض)" : "1 hour (Default)" },
+        { val: "120", label: lang === 'fa' ? "۲ ساعت" : "2 hours" },
+        { val: "360", label: lang === 'fa' ? "۶ ساعت" : "6 hours" },
+        { val: "720", label: lang === 'fa' ? "۱۲ ساعت" : "12 hours" },
+        { val: "1440", label: lang === 'fa' ? "۲۴ ساعت" : "24 hours" },
+        { val: "0", label: lang === 'fa' ? "غیرفعال (خاموش)" : "Disabled (Off)" }
+      ];
+      autoSyncSelect.innerHTML = opts.map(o => `<option value="${o.val}">${o.label}</option>`).join('');
+      autoSyncSelect.value = currentVal;
     }
   }
 };
