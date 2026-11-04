@@ -337,6 +337,36 @@ function renderTasksHubList() {
   if (window.lucide) window.lucide.createIcons();
 }
 
+function getDeletedTaskIds() {
+  try {
+    const raw = SafeStorage.getItem(CONFIG.DELETED_TASKS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function recordDeletedTaskId(id) {
+  try {
+    const ids = getDeletedTaskIds();
+    if (!ids.includes(id)) {
+      ids.push(id);
+      if (ids.length > 500) ids.splice(0, ids.length - 500);
+      SafeStorage.setItem(CONFIG.DELETED_TASKS_KEY, JSON.stringify(ids));
+    }
+  } catch (e) {}
+}
+
+function clearDeletedTaskId(id) {
+  try {
+    let ids = getDeletedTaskIds();
+    if (ids.includes(id)) {
+      ids = ids.filter(i => i !== id);
+      SafeStorage.setItem(CONFIG.DELETED_TASKS_KEY, JSON.stringify(ids));
+    }
+  } catch (e) {}
+}
+
 function addSharedTaskFromHub() {
   const tagId = document.getElementById('tasksHubTargetTagSelect').value;
   const titleInput = document.getElementById('tasksHubNewTaskTitle');
@@ -351,6 +381,7 @@ function addSharedTaskFromHub() {
     completedAt: null
   };
 
+  clearDeletedTaskId(newTask.id);
   sharedTasksBank.push(newTask);
   titleInput.value = '';
   saveTasksBank();
@@ -375,6 +406,7 @@ function updateSharedTaskTitle(id, newTitle) {
 
 function deleteSharedTask(id) {
   sharedTasksBank = sharedTasksBank.filter(t => t.id !== id);
+  recordDeletedTaskId(id);
   saveTasksBank();
   if (SupabaseSync.isConfigured) {
     SupabaseSync.deleteTask(id);
@@ -400,6 +432,7 @@ function archiveSharedTaskDirectly(taskId) {
 function restoreSharedTaskFromArchive(taskId) {
   const task = sharedTasksBank.find(t => t.id === taskId);
   if (task) {
+    clearDeletedTaskId(taskId);
     task.completed = false;
     task.completedAt = null;
     saveTasksBank();
@@ -620,6 +653,7 @@ function addQuickTaskFromBlock() {
     completedAt: null
   };
 
+  clearDeletedTaskId(newTask.id);
   sharedTasksBank.push(newTask);
   saveTasksBank();
 

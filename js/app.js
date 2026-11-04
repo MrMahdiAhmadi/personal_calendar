@@ -16,16 +16,36 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Service Worker Registration for PWA / Offline Support
+  // Service Worker Registration for PWA / Offline Support with instant update detection
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
         .then((reg) => {
           console.log('[SW] Service Worker registered with scope:', reg.scope);
+
+          // Proactively check for new service worker on deploy
+          reg.update().catch(() => {});
+
+          // Check for updates when tab or app returns to foreground
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              reg.update().catch(() => {});
+            }
+          });
         })
         .catch((err) => {
           console.warn('[SW] Service Worker registration failed:', err);
         });
+    });
+
+    // When the new Service Worker activates and takes control, seamlessly reload if an update occurred
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        console.log('[SW] New version activated, reloading to latest deployment...');
+        window.location.reload();
+      }
     });
   }
 
@@ -83,9 +103,35 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  window.addEventListener('online', updateNetworkStatus);
+  window.addEventListener('online', () => {
+    updateNetworkStatus();
+    if (typeof triggerDatabaseSync === 'function') {
+      triggerDatabaseSync(false);
+    }
+  });
   window.addEventListener('offline', updateNetworkStatus);
   updateNetworkStatus();
+
+  // Instant multi-device sync on tab/window focus or visibility change
+  let lastFocusSyncTime = 0;
+  function triggerFocusSync() {
+    const now = Date.now();
+    // Throttle focus sync to once every 10 seconds to avoid spamming
+    if (now - lastFocusSyncTime > 10000) {
+      lastFocusSyncTime = now;
+      if (typeof syncFromSupabase === 'function' && SupabaseSync.isConfigured && navigator.onLine) {
+        console.log('[MultiDevice] App focused / visible, checking for remote updates...');
+        syncFromSupabase();
+      }
+    }
+  }
+
+  window.addEventListener('focus', triggerFocusSync);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      triggerFocusSync();
+    }
+  });
 
   // 6. Mobile Tools Toolbar Toggle
   const mobileToolsToggleBtn = document.getElementById('mobileToolsToggleBtn');

@@ -348,26 +348,140 @@ async function syncFromSupabase() {
       }
     }
 
-    if (cloudTags && cloudTags.length > 0) {
-      customTags = cloudTags;
-      SafeStorage.setItem(CONFIG.TAGS_KEY, JSON.stringify(customTags));
-      populateTagsDropdowns();
-      renderCustomTagsList();
-      renderTasksHubFilterTabs();
-      changed = true;
+    // 1. Bidirectional Merge for Custom Tags: preserve local tags not in cloud and upload them
+    if (cloudTags && Array.isArray(cloudTags)) {
+      const tagMap = new Map();
+      cloudTags.forEach(t => tagMap.set(t.id, t));
+
+      let tagsPushedToCloud = false;
+      customTags.forEach(localTag => {
+        if (!tagMap.has(localTag.id)) {
+          tagMap.set(localTag.id, localTag);
+          if (SupabaseSync.isConfigured) {
+            SupabaseSync.upsertTag(localTag);
+          }
+          tagsPushedToCloud = true;
+        }
+      });
+
+      const mergedTags = Array.from(tagMap.values());
+      if (tagsPushedToCloud || JSON.stringify(mergedTags) !== JSON.stringify(customTags)) {
+        customTags = mergedTags;
+        SafeStorage.setItem(CONFIG.TAGS_KEY, JSON.stringify(customTags));
+        if (typeof populateTagsDropdowns === 'function') populateTagsDropdowns();
+        if (typeof renderCustomTagsList === 'function') renderCustomTagsList();
+        if (typeof renderTasksHubFilterTabs === 'function') renderTasksHubFilterTabs();
+        changed = true;
+      }
     }
 
-    if (cloudTasks && cloudTasks.length > 0) {
-      sharedTasksBank = cloudTasks;
-      SafeStorage.setItem(CONFIG.TASKS_BANK_KEY, JSON.stringify(sharedTasksBank));
-      renderTasksHubList();
-      changed = true;
+    // 2. Intelligent Bidirectional Merge for Task Bank:
+    // Prevents tasks created on one device from being deleted or overwritten by an older state
+    if (cloudTasks && Array.isArray(cloudTasks)) {
+      const deletedIds = new Set(typeof getDeletedTaskIds === 'function' ? getDeletedTaskIds() : []);
+      const cloudTaskMap = new Map();
+      cloudTasks.forEach(ct => cloudTaskMap.set(ct.id, ct));
+
+      const mergedTasks = [];
+      const seenIds = new Set();
+
+      // Step A: Examine all tasks currently in local memory
+      for (const localTask of sharedTasksBank) {
+        if (deletedIds.has(localTask.id)) {
+          // Task was intentionally deleted on this device; ensure cloud also deletes it
+          if (cloudTaskMap.has(localTask.id)) {
+            SupabaseSync.deleteTask(localTask.id);
+          }
+          continue;
+        }
+
+        if (cloudTaskMap.has(localTask.id)) {
+          // Task exists in both: update properties gracefully
+          const ct = cloudTaskMap.get(localTask.id);
+          mergedTasks.push({
+            id: localTask.id,
+            tagId: ct.tagId || localTask.tagId || 'misc',
+            title: ct.title || localTask.title,
+            completed: ct.completed !== undefined ? !!ct.completed : !!localTask.completed,
+            completedAt: ct.completedAt || localTask.completedAt || null
+          });
+          seenIds.add(localTask.id);
+        } else {
+          // Task exists locally but NOT in cloud (e.g. created on this device offline or before sync)
+          // NEVER DELETE: preserve it and push it to Supabase so other devices receive it!
+          mergedTasks.push(localTask);
+          seenIds.add(localTask.id);
+          if (SupabaseSync.isConfigured) {
+            SupabaseSync.upsertTask(localTask);
+          }
+        }
+      }
+
+      // Step B: Add any cloud tasks that this device hasn't seen yet
+      for (const ct of cloudTasks) {
+        if (deletedIds.has(ct.id)) {
+          SupabaseSync.deleteTask(ct.id);
+          continue;
+        }
+        if (!seenIds.has(ct.id)) {
+          mergedTasks.push(ct);
+          seenIds.add(ct.id);
+        }
+      }
+
+      const beforeStr = JSON.stringify(sharedTasksBank);
+      const afterStr = JSON.stringify(mergedTasks);
+      if (beforeStr !== afterStr) {
+        sharedTasksBank = mergedTasks;
+        SafeStorage.setItem(CONFIG.TASKS_BANK_KEY, JSON.stringify(sharedTasksBank));
+        if (typeof renderTasksHubList === 'function') renderTasksHubList();
+        if (activeModalTarget && typeof renderModalBlockTasks === 'function') renderModalBlockTasks();
+        changed = true;
+      }
     }
 
-    if (cloudBlocks && Object.keys(cloudBlocks).length > 0) {
-      weeksData = { ...weeksData, ...cloudBlocks };
-      SafeStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(weeksData));
-      changed = true;
+    // 3. Deep Hierarchical Merge for Scheduled Blocks:
+    // Merges by weekKey -> dayId -> blockIndex so edits on different days or blocks are never wiped
+    if (cloudBlocks && typeof cloudBlocks === 'object') {
+      let blocksChanged = false;
+      Object.keys(cloudBlocks).forEach(wKey => {
+        if (!weeksData[wKey]) {
+          weeksData[wKey] = cloudBlocks[wKey];
+          blocksChanged = true;
+        } else {
+          Object.keys(cloudBlocks[wKey]).forEach(dId => {
+            if (!weeksData[wKey][dId]) {
+              weeksData[wKey][dId] = cloudBlocks[wKey][dId];
+              blocksChanged = true;
+            } else {
+              Object.keys(cloudBlocks[wKey][dId]).forEach(bIdx => {
+                const cloudBlock = cloudBlocks[wKey][dId][bIdx];
+                const localBlock = weeksData[wKey][dId][bIdx];
+                if (!localBlock) {
+                  weeksData[wKey][dId][bIdx] = cloudBlock;
+                  blocksChanged = true;
+                } else if (JSON.stringify(localBlock) !== JSON.stringify(cloudBlock)) {
+                  // Merge block details preserving properties
+                  weeksData[wKey][dId][bIdx] = {
+                    ...localBlock,
+                    ...cloudBlock,
+                    blockTasks: {
+                      ...(localBlock.blockTasks || {}),
+                      ...(cloudBlock.blockTasks || {})
+                    }
+                  };
+                  blocksChanged = true;
+                }
+              });
+            }
+          });
+        }
+      });
+
+      if (blocksChanged) {
+        SafeStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(weeksData));
+        changed = true;
+      }
     }
 
     if (cloudTemplates && Array.isArray(cloudTemplates)) {
