@@ -75,7 +75,8 @@ grant all on table public.planner_blocks to anon, authenticated;
 grant all on table public.planner_settings to anon, authenticated;
 grant all on table public.planner_templates to anon, authenticated;
 
--- Policies for public calendar access
+-- Policies for public calendar access (idempotent: drop before create)
+drop policy if exists "Allow all access to planner_tags" on public.planner_tags;
 create policy "Allow all access to planner_tags"
   on public.planner_tags
   for all
@@ -83,6 +84,31 @@ create policy "Allow all access to planner_tags"
   using (true)
   with check (true);
 
+drop policy if exists "Allow all access to planner_tasks" on public.planner_tasks;
+create policy "Allow all access to planner_tasks"
+  on public.planner_tasks
+  for all
+  to anon, authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "Allow all access to planner_blocks" on public.planner_blocks;
+create policy "Allow all access to planner_blocks"
+  on public.planner_blocks
+  for all
+  to anon, authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "Allow all access to planner_settings" on public.planner_settings;
+create policy "Allow all access to planner_settings"
+  on public.planner_settings
+  for all
+  to anon, authenticated
+  using (true)
+  with check (true);
+
+drop policy if exists "Allow all access to planner_templates" on public.planner_templates;
 create policy "Allow all access to planner_templates"
   on public.planner_templates
   for all
@@ -91,32 +117,31 @@ create policy "Allow all access to planner_templates"
   with check (true);
 
 -- Enable Supabase Realtime publication for immediate live updates across clients
-alter publication supabase_realtime add table public.planner_tags;
-alter publication supabase_realtime add table public.planner_tasks;
-alter publication supabase_realtime add table public.planner_blocks;
-alter publication supabase_realtime add table public.planner_settings;
-alter publication supabase_realtime add table public.planner_templates;
-
-create policy "Allow all access to planner_tasks"
-  on public.planner_tasks
-  for all
-  to anon, authenticated
-  using (true)
-  with check (true);
-
-create policy "Allow all access to planner_blocks"
-  on public.planner_blocks
-  for all
-  to anon, authenticated
-  using (true)
-  with check (true);
-
-create policy "Allow all access to planner_settings"
-  on public.planner_settings
-  for all
-  to anon, authenticated
-  using (true)
-  with check (true);
+-- Safely add tables to publication if not already member
+do $$
+declare
+  tbl text;
+  tables text[] := array[
+    'planner_tags',
+    'planner_tasks',
+    'planner_blocks',
+    'planner_settings',
+    'planner_templates'
+  ];
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach tbl in array tables loop
+      if not exists (
+        select 1 from pg_publication_tables
+        where pubname = 'supabase_realtime'
+          and schemaname = 'public'
+          and tablename = tbl
+      ) then
+        execute format('alter publication supabase_realtime add table public.%I', tbl);
+      end if;
+    end loop;
+  end if;
+end $$;
 
 -- Initial default tags seed data (Generic examples)
 insert into public.planner_tags (id, name, color)
