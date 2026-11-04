@@ -146,7 +146,9 @@ function loadAppData() {
   ensureWeekStructure(getWeekKey(weekOffset));
 
   // Asynchronously sync from Supabase if connected
-  syncFromSupabase();
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+    syncFromSupabase();
+  }
 
   // Initialize auto-sync scheduler
   initAutoSync();
@@ -348,25 +350,25 @@ async function syncFromSupabase() {
       }
     }
 
-    // 1. Bidirectional Merge for Custom Tags: preserve local tags not in cloud and upload them
+    // 1. Supabase as Authoritative Source of Truth for Custom Tags:
+    // When Supabase is configured and returns tags, cloud tags define the authoritative set.
     if (cloudTags && Array.isArray(cloudTags)) {
       const tagMap = new Map();
       cloudTags.forEach(t => tagMap.set(t.id, t));
 
-      let tagsPushedToCloud = false;
+      // If there are existing local custom tags created while offline, also sync them up
       customTags.forEach(localTag => {
         if (!tagMap.has(localTag.id)) {
           tagMap.set(localTag.id, localTag);
           if (SupabaseSync.isConfigured) {
             SupabaseSync.upsertTag(localTag);
           }
-          tagsPushedToCloud = true;
         }
       });
 
-      const mergedTags = Array.from(tagMap.values());
-      if (tagsPushedToCloud || JSON.stringify(mergedTags) !== JSON.stringify(customTags)) {
-        customTags = mergedTags;
+      const updatedTags = Array.from(tagMap.values());
+      if (JSON.stringify(updatedTags) !== JSON.stringify(customTags)) {
+        customTags = updatedTags;
         SafeStorage.setItem(CONFIG.TAGS_KEY, JSON.stringify(customTags));
         if (typeof populateTagsDropdowns === 'function') populateTagsDropdowns();
         if (typeof renderCustomTagsList === 'function') renderCustomTagsList();
@@ -375,8 +377,8 @@ async function syncFromSupabase() {
       }
     }
 
-    // 2. Intelligent Bidirectional Merge for Task Bank:
-    // Prevents tasks created on one device from being deleted or overwritten by an older state
+    // 2. Supabase as Authoritative Source of Truth for Task Bank:
+    // Cloud task state is the primary reference. Local changes made offline are uploaded.
     if (cloudTasks && Array.isArray(cloudTasks)) {
       const deletedIds = new Set(typeof getDeletedTaskIds === 'function' ? getDeletedTaskIds() : []);
       const cloudTaskMap = new Map();
@@ -385,47 +387,31 @@ async function syncFromSupabase() {
       const mergedTasks = [];
       const seenIds = new Set();
 
-      // Step A: Examine all tasks currently in local memory
+      // Cloud tasks take precedence:
+      for (const ct of cloudTasks) {
+        if (deletedIds.has(ct.id)) {
+          SupabaseSync.deleteTask(ct.id);
+          continue;
+        }
+        mergedTasks.push(ct);
+        seenIds.add(ct.id);
+      }
+
+      // Check if any offline-created local tasks need to be uploaded to Supabase
       for (const localTask of sharedTasksBank) {
         if (deletedIds.has(localTask.id)) {
-          // Task was intentionally deleted on this device; ensure cloud also deletes it
           if (cloudTaskMap.has(localTask.id)) {
             SupabaseSync.deleteTask(localTask.id);
           }
           continue;
         }
 
-        if (cloudTaskMap.has(localTask.id)) {
-          // Task exists in both: update properties gracefully
-          const ct = cloudTaskMap.get(localTask.id);
-          mergedTasks.push({
-            id: localTask.id,
-            tagId: ct.tagId || localTask.tagId || 'misc',
-            title: ct.title || localTask.title,
-            completed: ct.completed !== undefined ? !!ct.completed : !!localTask.completed,
-            completedAt: ct.completedAt || localTask.completedAt || null
-          });
-          seenIds.add(localTask.id);
-        } else {
-          // Task exists locally but NOT in cloud (e.g. created on this device offline or before sync)
-          // NEVER DELETE: preserve it and push it to Supabase so other devices receive it!
+        if (!seenIds.has(localTask.id)) {
           mergedTasks.push(localTask);
           seenIds.add(localTask.id);
           if (SupabaseSync.isConfigured) {
             SupabaseSync.upsertTask(localTask);
           }
-        }
-      }
-
-      // Step B: Add any cloud tasks that this device hasn't seen yet
-      for (const ct of cloudTasks) {
-        if (deletedIds.has(ct.id)) {
-          SupabaseSync.deleteTask(ct.id);
-          continue;
-        }
-        if (!seenIds.has(ct.id)) {
-          mergedTasks.push(ct);
-          seenIds.add(ct.id);
         }
       }
 
@@ -435,48 +421,96 @@ async function syncFromSupabase() {
         sharedTasksBank = mergedTasks;
         SafeStorage.setItem(CONFIG.TASKS_BANK_KEY, JSON.stringify(sharedTasksBank));
         if (typeof renderTasksHubList === 'function') renderTasksHubList();
-        if (activeModalTarget && typeof renderModalBlockTasks === 'function') renderModalBlockTasks();
+        if (typeof activeModalTarget !== 'undefined' && activeModalTarget && typeof renderModalBlockTasks === 'function') renderModalBlockTasks();
         changed = true;
       }
     }
 
-    // 3. Deep Hierarchical Merge for Scheduled Blocks:
-    // Merges by weekKey -> dayId -> blockIndex so edits on different days or blocks are never wiped
+    // 3. Supabase as Authoritative Source of Truth for Scheduled Blocks:
+    // Supabase cloud data is the reference. When Device 2 edits any block, Device 1 reflects it completely.
     if (cloudBlocks && typeof cloudBlocks === 'object') {
       let blocksChanged = false;
+
+      // Supabase is the primary reference: overwrite/update local blocks with cloud blocks
       Object.keys(cloudBlocks).forEach(wKey => {
         if (!weeksData[wKey]) {
-          weeksData[wKey] = cloudBlocks[wKey];
-          blocksChanged = true;
-        } else {
-          Object.keys(cloudBlocks[wKey]).forEach(dId => {
-            if (!weeksData[wKey][dId]) {
-              weeksData[wKey][dId] = cloudBlocks[wKey][dId];
+          weeksData[wKey] = {};
+        }
+        Object.keys(cloudBlocks[wKey]).forEach(dId => {
+          if (!weeksData[wKey][dId]) {
+            weeksData[wKey][dId] = {};
+          }
+          Object.keys(cloudBlocks[wKey][dId]).forEach(bIdx => {
+            const cloudBlock = cloudBlocks[wKey][dId][bIdx];
+            const localBlock = weeksData[wKey][dId][bIdx];
+
+            // Normalize block comparison ignoring updatedAt
+            const normalizedCloud = {
+              title: cloudBlock.title || '',
+              status: cloudBlock.status || 'pending',
+              tagId: cloudBlock.tagId || 'misc',
+              notes: cloudBlock.notes || '',
+              blockTasks: cloudBlock.blockTasks || {},
+              taskOrder: Array.isArray(cloudBlock.taskOrder) ? cloudBlock.taskOrder : [],
+              pomodoro: (cloudBlock.pomodoro && typeof cloudBlock.pomodoro === 'object') ? cloudBlock.pomodoro : { sessions: 0, totalFocusMinutes: 0 }
+            };
+
+            const normalizedLocal = localBlock ? {
+              title: localBlock.title || '',
+              status: localBlock.status || 'pending',
+              tagId: localBlock.tagId || 'misc',
+              notes: localBlock.notes || '',
+              blockTasks: localBlock.blockTasks || {},
+              taskOrder: Array.isArray(localBlock.taskOrder) ? localBlock.taskOrder : [],
+              pomodoro: (localBlock.pomodoro && typeof localBlock.pomodoro === 'object') ? localBlock.pomodoro : { sessions: 0, totalFocusMinutes: 0 }
+            } : null;
+
+            if (!normalizedLocal || JSON.stringify(normalizedLocal) !== JSON.stringify(normalizedCloud)) {
+              weeksData[wKey][dId][bIdx] = {
+                ...normalizedCloud
+              };
               blocksChanged = true;
-            } else {
-              Object.keys(cloudBlocks[wKey][dId]).forEach(bIdx => {
-                const cloudBlock = cloudBlocks[wKey][dId][bIdx];
-                const localBlock = weeksData[wKey][dId][bIdx];
-                if (!localBlock) {
-                  weeksData[wKey][dId][bIdx] = cloudBlock;
-                  blocksChanged = true;
-                } else if (JSON.stringify(localBlock) !== JSON.stringify(cloudBlock)) {
-                  // Merge block details preserving properties
-                  weeksData[wKey][dId][bIdx] = {
-                    ...localBlock,
-                    ...cloudBlock,
-                    blockTasks: {
-                      ...(localBlock.blockTasks || {}),
-                      ...(cloudBlock.blockTasks || {})
-                    }
-                  };
-                  blocksChanged = true;
-                }
-              });
             }
           });
-        }
+        });
       });
+
+      // Also check if local memory had blocks that were never pushed to Supabase (e.g. offline created)
+      const offlineBlocksToUpload = [];
+      Object.keys(weeksData).forEach(wKey => {
+        if (wKey.startsWith('__')) return;
+        Object.keys(weeksData[wKey] || {}).forEach(dId => {
+          Object.keys(weeksData[wKey][dId] || {}).forEach(bIdx => {
+            const localBlock = weeksData[wKey][dId][bIdx];
+            const hasCloudBlock = cloudBlocks[wKey] && cloudBlocks[wKey][dId] && cloudBlocks[wKey][dId][bIdx];
+            if (!hasCloudBlock && localBlock) {
+              const hasContent = (localBlock.title && localBlock.title.trim() !== '') ||
+                                (localBlock.notes && localBlock.notes.trim() !== '') ||
+                                (localBlock.status && localBlock.status !== 'pending') ||
+                                (localBlock.blockTasks && Object.keys(localBlock.blockTasks).length > 0) ||
+                                (localBlock.tagId && localBlock.tagId !== 'misc');
+              if (hasContent) {
+                offlineBlocksToUpload.push({
+                  weekKey: wKey,
+                  dayId: dId,
+                  blockIndex: parseInt(bIdx, 10),
+                  blockData: localBlock
+                });
+              }
+            }
+          });
+        });
+      });
+
+      if (offlineBlocksToUpload.length > 0 && SupabaseSync.isConfigured) {
+        if (typeof SupabaseSync.batchUpsertBlocks === 'function') {
+          SupabaseSync.batchUpsertBlocks(offlineBlocksToUpload);
+        } else {
+          offlineBlocksToUpload.forEach(item => {
+            SupabaseSync.upsertBlock(item.weekKey, item.dayId, item.blockIndex, item.blockData);
+          });
+        }
+      }
 
       if (blocksChanged) {
         SafeStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(weeksData));

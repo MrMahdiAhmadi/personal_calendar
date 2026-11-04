@@ -349,7 +349,10 @@ const SupabaseSync = {
             status: row.status || 'pending',
             tagId: row.tag_id || 'misc',
             notes: row.notes || '',
-            blockTasks: row.block_tasks || {}
+            blockTasks: row.block_tasks || {},
+            taskOrder: Array.isArray(row.task_order) ? row.task_order : [],
+            pomodoro: (row.pomodoro && typeof row.pomodoro === 'object') ? row.pomodoro : { sessions: 0, totalFocusMinutes: 0 },
+            updatedAt: row.updated_at || null
           };
         });
       }
@@ -365,9 +368,27 @@ const SupabaseSync = {
     if (!this.isConfigured || !this.client) return;
     try {
       this.setStatus('syncing');
-      const { error } = await this.client
+      const row = {
+        week_key: weekKey,
+        day_id: dayId,
+        block_index: blockIndex,
+        title: blockData.title || '',
+        status: blockData.status || 'pending',
+        tag_id: blockData.tagId || 'misc',
+        notes: blockData.notes || '',
+        block_tasks: blockData.blockTasks || {},
+        task_order: Array.isArray(blockData.taskOrder) ? blockData.taskOrder : [],
+        pomodoro: (blockData.pomodoro && typeof blockData.pomodoro === 'object') ? blockData.pomodoro : { sessions: 0, totalFocusMinutes: 0 },
+        updated_at: new Date().toISOString()
+      };
+
+      let { error } = await this.client
         .from('planner_blocks')
-        .upsert({
+        .upsert(row);
+
+      // Graceful fallback if database table does not yet have task_order or pomodoro columns
+      if (error && error.message && (error.message.includes('task_order') || error.message.includes('pomodoro'))) {
+        const legacyRow = {
           week_key: weekKey,
           day_id: dayId,
           block_index: blockIndex,
@@ -377,7 +398,11 @@ const SupabaseSync = {
           notes: blockData.notes || '',
           block_tasks: blockData.blockTasks || {},
           updated_at: new Date().toISOString()
-        });
+        };
+        const legacyRes = await this.client.from('planner_blocks').upsert(legacyRow);
+        error = legacyRes.error;
+      }
+
       this.setStatus('connected');
       if (error) console.error('[Supabase] upsertBlock error:', error);
     } catch (e) {
@@ -398,6 +423,8 @@ const SupabaseSync = {
         tag_id: item.blockData.tagId || 'misc',
         notes: item.blockData.notes || '',
         block_tasks: item.blockData.blockTasks || {},
+        task_order: Array.isArray(item.blockData.taskOrder) ? item.blockData.taskOrder : [],
+        pomodoro: (item.blockData.pomodoro && typeof item.blockData.pomodoro === 'object') ? item.blockData.pomodoro : { sessions: 0, totalFocusMinutes: 0 },
         updated_at: new Date().toISOString()
       }));
 

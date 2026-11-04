@@ -93,20 +93,32 @@ function deleteCustomTag(idx) {
 
   const deletedId = tag.id;
 
-  // Reassign blocks using this tag to 'misc'
+  // Reassign blocks using this tag to 'misc' and sync updated blocks to Supabase
+  const blocksToUpdate = [];
   Object.keys(weeksData).forEach(wKey => {
     DAYS_OF_WEEK.forEach(day => {
-      for (let i = 0; i < 24; i++) {
+      const scheduleLen = typeof SCHEDULE_METADATA !== 'undefined' ? SCHEDULE_METADATA.length : 24;
+      for (let i = 0; i < scheduleLen; i++) {
         if (weeksData[wKey][day.id] && weeksData[wKey][day.id][i] && weeksData[wKey][day.id][i].tagId === tag.id) {
           weeksData[wKey][day.id][i].tagId = 'misc';
+          blocksToUpdate.push({
+            weekKey: wKey,
+            dayId: day.id,
+            blockIndex: i,
+            blockData: weeksData[wKey][day.id][i]
+          });
         }
       }
     });
   });
 
-  // Reassign tasks in bank with this tag to 'misc'
+  // Reassign tasks in bank with this tag to 'misc' and sync them to Supabase
+  const tasksToUpdate = [];
   sharedTasksBank.forEach(t => {
-    if (t.tagId === tag.id) t.tagId = 'misc';
+    if (t.tagId === tag.id) {
+      t.tagId = 'misc';
+      tasksToUpdate.push(t);
+    }
   });
 
   customTags.splice(idx, 1);
@@ -115,6 +127,14 @@ function deleteCustomTag(idx) {
   saveTagsData();
 
   if (SupabaseSync.isConfigured) {
+    if (blocksToUpdate.length > 0) {
+      if (typeof SupabaseSync.batchUpsertBlocks === 'function') {
+        SupabaseSync.batchUpsertBlocks(blocksToUpdate);
+      } else {
+        blocksToUpdate.forEach(b => SupabaseSync.upsertBlock(b.weekKey, b.dayId, b.blockIndex, b.blockData));
+      }
+    }
+    tasksToUpdate.forEach(t => SupabaseSync.upsertTask(t));
     SupabaseSync.deleteTag(deletedId);
   }
 
