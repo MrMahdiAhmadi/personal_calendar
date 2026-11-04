@@ -75,7 +75,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4. Load Application Data
+  // 4. Load Application Data from Local Cache for Instant Paint
   loadAppData();
   populateTagsDropdowns();
   renderCustomTagsList();
@@ -83,6 +83,11 @@ window.addEventListener('DOMContentLoaded', () => {
   updateHideBreaksUI();
   renderDayTabs();
   renderCurrentView();
+
+  // If Supabase is configured and browser is online, immediately fetch authoritative cloud state
+  if (SupabaseSync.isConfigured && navigator.onLine && typeof syncFromSupabase === 'function') {
+    syncFromSupabase();
+  }
 
   // 5. Live Iran Clock
   setInterval(updateLiveIranTicker, 1000);

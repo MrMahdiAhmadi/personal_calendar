@@ -31,9 +31,15 @@ create table if not exists public.planner_blocks (
   tag_id text default 'misc',
   notes text default '' not null,
   block_tasks jsonb default '{}'::jsonb not null,
+  task_order jsonb default '[]'::jsonb not null,
+  pomodoro jsonb default '{"sessions": 0, "totalFocusMinutes": 0}'::jsonb not null,
   updated_at timestamptz default timezone('utc'::text, now()) not null,
   primary key (week_key, day_id, block_index)
 );
+
+-- Idempotent column additions in case table was created earlier
+alter table public.planner_blocks add column if not exists task_order jsonb default '[]'::jsonb not null;
+alter table public.planner_blocks add column if not exists pomodoro jsonb default '{"sessions": 0, "totalFocusMinutes": 0}'::jsonb not null;
 
 -- 4. Planner Settings & Preferences Table
 create table if not exists public.planner_settings (
