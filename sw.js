@@ -3,7 +3,7 @@
    Caches local files and external CDN dependencies for offline use
    ===================================================================== */
 
-const CACHE_NAME = 'time-planner-v3';
+const CACHE_NAME = 'time-planner-v4';
 
 // Core static assets necessary for offline execution
 const PRECACHE_ASSETS = [
@@ -38,16 +38,17 @@ const CDN_HOSTS = [
   'fonts.gstatic.com'
 ];
 
-// 1. Install Event: Pre-cache local assets
+// 1. Install Event: Pre-cache local assets & skip waiting immediately
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_ASSETS);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// 2. Activate Event: Clean up outdated caches
+// 2. Activate Event: Clean up outdated caches & claim clients immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -62,7 +63,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch Event: Cache-first with network fallback for local and CDN assets
+// 3. Fetch Event:
+// - Navigation requests (HTML) and local app scripts/styles: Network-First with Cache Fallback
+//   This guarantees users immediately receive the newest deployment without needing Shift+Cmd+R.
+// - Third-party CDN libraries: Stale-While-Revalidate with Cache Fallback
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
@@ -72,50 +76,69 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Do not cache Supabase API database calls or chrome-extension URLs
+  // Do not intercept Supabase API database calls or chrome-extension URLs
   if (url.origin.includes('supabase.co') || url.protocol === 'chrome-extension:') {
     return;
   }
 
   const isLocal = url.origin === self.location.origin;
   const isCdn = CDN_HOSTS.some((host) => url.hostname.includes(host));
+  const isNavigation = request.mode === 'navigate';
 
-  if (isLocal || isCdn) {
+  // Strategy A: Local files and navigation requests -> Network-First
+  // Ensures updates are picked up as soon as user opens or refreshes the page when online.
+  if (isNavigation || isLocal) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, copy);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // If network is offline or fails, serve from offline cache
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            if (isNavigation) {
+              return caches.match('./index.html');
+            }
+            return new Response('Offline and resource not in cache', { status: 503, statusText: 'Offline' });
+          });
+        })
+    );
+    return;
+  }
+
+  // Strategy B: CDN Host assets -> Cache-First with background update
+  if (isCdn) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
-        // Return cached version if found
         if (cachedResponse) {
-          // Fetch updated version in background (Stale-While-Revalidate)
           fetch(request).then((networkResponse) => {
             if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
               caches.open(CACHE_NAME).then((cache) => {
                 cache.put(request, networkResponse);
               });
             }
-          }).catch(() => {
-            // Network failure is expected when offline; ignored
-          });
+          }).catch(() => {});
           return cachedResponse;
         }
 
-        // Otherwise fetch from network and cache for next time
         return fetch(request).then((networkResponse) => {
           if (!networkResponse || (networkResponse.status !== 200 && networkResponse.type !== 'opaque')) {
             return networkResponse;
           }
-
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, responseToCache);
           });
-
           return networkResponse;
-        }).catch((err) => {
-          // Fallback for navigation requests if offline and not in cache
-          if (request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
-          throw err;
         });
       })
     );

@@ -184,12 +184,36 @@ function refreshActiveRingInViews(todayDayId, activeIndex) {
   const isCurrentWeek = weekOffset === 0;
 
   document.querySelectorAll('.block-element').forEach(el => {
-    el.classList.remove('ring-4', 'ring-indigo-500/80', 'pulse-ring', 'border-indigo-500');
+    el.classList.remove('active-block-current', 'ring-4', 'ring-indigo-500/80', 'pulse-ring', 'border-indigo-500');
+    const existingBadge = el.querySelector('.active-now-badge-container');
+    if (existingBadge) {
+      existingBadge.remove();
+    }
+
     if (isCurrentWeek) {
       const elDay = el.getAttribute('data-day');
       const elIdx = parseInt(el.getAttribute('data-index'), 10);
       if (elDay === todayDayId && elIdx === activeIndex) {
-        el.classList.add('ring-4', 'ring-indigo-500/80', 'pulse-ring', 'border-indigo-500');
+        el.classList.add('active-block-current');
+
+        const badgeContainer = document.createElement('div');
+        badgeContainer.className = 'active-now-badge-container flex items-center justify-end';
+        const badgeText = (typeof I18N !== 'undefined' && I18N.t) ? I18N.t('active_now_badge') : 'NOW';
+        badgeContainer.innerHTML = `
+          <span class="active-now-badge">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
+            <span>${badgeText}</span>
+          </span>
+        `;
+
+        const topRow = el.querySelector('.flex.items-center.justify-between') ||
+                       el.querySelector('.flex.items-start.justify-between') ||
+                       el.firstElementChild;
+        if (topRow) {
+          topRow.appendChild(badgeContainer);
+        } else {
+          el.prepend(badgeContainer);
+        }
       }
     }
   });
@@ -205,7 +229,7 @@ function scrollToCurrentBlock() {
   }
 
   setTimeout(() => {
-    const active = document.querySelector('.pulse-ring');
+    const active = document.querySelector('.active-block-current');
     if (active) {
       active.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {

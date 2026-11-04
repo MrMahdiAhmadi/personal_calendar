@@ -146,19 +146,38 @@ const SupabaseSync = {
       this.setStatus('syncing');
       const row = {
         id: task.id,
-        tag_id: task.tagId,
+        tag_id: task.tagId || 'misc',
         title: task.title,
         completed: !!task.completed,
         completed_at: task.completedAt || null
       };
-      const { error } = await this.client
+      let { error } = await this.client
         .from('planner_tasks')
         .upsert(row);
+
+      // Handle foreign key constraint if tag is not yet in cloud planner_tags
+      if (error && error.message && error.message.includes('planner_tasks_tag_id_fkey')) {
+        if (typeof getTagById === 'function') {
+          const localTag = getTagById(task.tagId);
+          if (localTag && localTag.id) {
+            await this.upsertTag(localTag);
+            const retryRes = await this.client.from('planner_tasks').upsert(row);
+            error = retryRes.error;
+          }
+        }
+        // If still error, retry without foreign key tag_id
+        if (error) {
+          const fallbackRow = { ...row, tag_id: null };
+          const fallbackRes = await this.client.from('planner_tasks').upsert(fallbackRow);
+          error = fallbackRes.error;
+        }
+      }
+
       this.setStatus('connected');
       if (error) {
         // Fallback for older schema without completed column
         if (error.message && error.message.includes('column "completed"')) {
-          await this.client.from('planner_tasks').upsert({ id: task.id, tag_id: task.tagId, title: task.title });
+          await this.client.from('planner_tasks').upsert({ id: task.id, tag_id: task.tagId || null, title: task.title });
         } else {
           console.error('[Supabase] upsertTask error:', error);
         }

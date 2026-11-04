@@ -148,6 +148,7 @@ const I18N = {
 
       // Active Banner
       active_block_label: "Active Block (Iran Time)",
+      active_now_badge: "NOW",
       calculating_time: "Calculating time...",
       completed_today: "Today:",
       completed_week: "This Week:",
@@ -457,6 +458,7 @@ const I18N = {
 
       // Active Banner
       active_block_label: "بلاک فعال بر اساس ساعت ایران",
+      active_now_badge: "اکنون",
       calculating_time: "در حال محاسبه زمان...",
       completed_today: "تکمیل شده امروز:",
       completed_week: "کل هفته:",

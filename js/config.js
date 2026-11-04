@@ -16,7 +16,8 @@ const CONFIG = {
   HIDE_BREAKS_KEY: 'tb_hide_breaks_preference',
   SUPABASE_CONFIG_KEY: 'tb_supabase_config',
   SETTINGS_KEY: 'tb_app_settings_v1',
-  TEMPLATES_KEY: 'tb_weekly_templates_v1'
+  TEMPLATES_KEY: 'tb_weekly_templates_v1',
+  DELETED_TASKS_KEY: 'tb_deleted_tasks_bank_v1'
 };
 
 const DEFAULT_SETTINGS = {
