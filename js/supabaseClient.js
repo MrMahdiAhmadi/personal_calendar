@@ -727,46 +727,20 @@ const SupabaseSync = {
     return true;
   },
 
-  // 6. Realtime Subscription for Instant Multi-Device Sync
+  // 6. Realtime Subscription (Disabled by default to avoid unexpected background overwrites)
   initRealtime() {
-    if (!this.isConfigured || !this.client || typeof this.client.channel !== 'function') return;
-
-    try {
-      if (this.realtimeChannel) {
+    // Disabled: real-time background listener triggers unexpected pulls and overwrites.
+    // Data sync is performed on initial app load and manually via the refresh button.
+    if (this.realtimeChannel && this.client && typeof this.client.removeChannel === 'function') {
+      try {
         this.client.removeChannel(this.realtimeChannel);
-        this.realtimeChannel = null;
-      }
-
-      this.realtimeChannel = this.client
-        .channel('planner_realtime_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_blocks' }, () => {
-          this.handleRemoteChange('blocks');
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_tags' }, () => {
-          this.handleRemoteChange('tags');
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_tasks' }, () => {
-          this.handleRemoteChange('tasks');
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_templates' }, () => {
-          this.handleRemoteChange('templates');
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_settings' }, () => {
-          this.handleRemoteChange('settings');
-        })
-        .subscribe();
-    } catch (err) {
-      console.warn('[Supabase] Realtime subscription init error:', err);
+      } catch (e) {}
+      this.realtimeChannel = null;
     }
   },
 
   _remoteDebounceTimer: null,
   handleRemoteChange(type) {
-    if (this._remoteDebounceTimer) clearTimeout(this._remoteDebounceTimer);
-    this._remoteDebounceTimer = setTimeout(() => {
-      if (typeof syncFromSupabase === 'function') {
-        syncFromSupabase();
-      }
-    }, 400);
+    // Disabled
   }
 };

@@ -117,26 +117,7 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('offline', updateNetworkStatus);
   updateNetworkStatus();
 
-  // Instant multi-device sync on tab/window focus or visibility change
-  let lastFocusSyncTime = 0;
-  function triggerFocusSync() {
-    const now = Date.now();
-    // Throttle focus sync to once every 10 seconds to avoid spamming
-    if (now - lastFocusSyncTime > 10000) {
-      lastFocusSyncTime = now;
-      if (typeof syncFromSupabase === 'function' && SupabaseSync.isConfigured && navigator.onLine) {
-        console.log('[MultiDevice] App focused / visible, checking for remote updates...');
-        syncFromSupabase();
-      }
-    }
-  }
-
-  window.addEventListener('focus', triggerFocusSync);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      triggerFocusSync();
-    }
-  });
+  // Note: Background auto-sync on focus/visibilitychange intentionally removed to prevent unexpected overwrites or race conditions.
 
   // 6. Mobile Tools Toolbar Toggle
   const mobileToolsToggleBtn = document.getElementById('mobileToolsToggleBtn');

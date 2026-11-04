@@ -77,8 +77,14 @@ function saveBlockModalChanges() {
 
   saveAppData();
 
-  if (SupabaseSync.isConfigured) {
+  if (SupabaseSync.isConfigured && navigator.onLine) {
     SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    PendingSyncManager.enqueue({
+      type: 'upsert_block',
+      key: `${weekKey}-${dayId}-${blockIndex}`,
+      data: { weekKey, dayId, blockIndex, block }
+    });
   }
 
   renderCurrentView();
@@ -221,8 +227,14 @@ function promptDeleteTemplate(templateId) {
     () => {
       weeklyTemplates = weeklyTemplates.filter(t => t.id !== templateId);
       saveTemplatesData();
-      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
         SupabaseSync.deleteTemplate(templateId);
+      } else if (typeof PendingSyncManager !== 'undefined') {
+        PendingSyncManager.enqueue({
+          type: 'delete_template',
+          key: templateId,
+          data: { id: templateId }
+        });
       }
       renderTemplatesList();
       showToast(I18N.t('toast_template_deleted'));
@@ -764,26 +776,26 @@ function saveSettingsModalChanges() {
   AppSettings.set('calendarType', newCal);
   AppSettings.set('language', newLang);
 
-  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+  const settingsObj = {
+    workBlockMins: workMins,
+    breakBlockMins: breakMins,
+    bedtime: newBedtime,
+    wakeTime: newWakeTime,
+    timezone: newTz,
+    calendarType: newCal,
+    language: newLang
+  };
+
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
     if (typeof SupabaseSync.upsertSettings === 'function') {
-      SupabaseSync.upsertSettings({
-        workBlockMins: workMins,
-        breakBlockMins: breakMins,
-        bedtime: newBedtime,
-        wakeTime: newWakeTime,
-        timezone: newTz,
-        calendarType: newCal,
-        language: newLang
-      });
-    } else if (typeof SupabaseSync.upsertSetting === 'function') {
-      SupabaseSync.upsertSetting('workBlockMins', workMins);
-      SupabaseSync.upsertSetting('breakBlockMins', breakMins);
-      SupabaseSync.upsertSetting('bedtime', newBedtime);
-      SupabaseSync.upsertSetting('wakeTime', newWakeTime);
-      SupabaseSync.upsertSetting('timezone', newTz);
-      SupabaseSync.upsertSetting('calendarType', newCal);
-      SupabaseSync.upsertSetting('language', newLang);
+      SupabaseSync.upsertSettings(settingsObj);
     }
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    PendingSyncManager.enqueue({
+      type: 'upsert_settings',
+      key: 'app_settings',
+      data: settingsObj
+    });
   }
 
   if (typeof generateScheduleDefinition === 'function') {
@@ -888,8 +900,14 @@ function promptResetDay() {
         weeksData[curWeekKey][selectedDayId] = {};
         saveAppData();
 
-        if (SupabaseSync.isConfigured) {
+        if (SupabaseSync.isConfigured && navigator.onLine) {
           SupabaseSync.deleteDayBlocks(curWeekKey, selectedDayId);
+        } else if (typeof PendingSyncManager !== 'undefined') {
+          PendingSyncManager.enqueue({
+            type: 'delete_day_blocks',
+            key: `${curWeekKey}-${selectedDayId}`,
+            data: { weekKey: curWeekKey, dayId: selectedDayId }
+          });
         }
 
         renderCurrentView();
@@ -909,8 +927,14 @@ function promptResetWeek() {
       ensureWeekStructure(curWeekKey);
       saveAppData();
 
-      if (SupabaseSync.isConfigured) {
+      if (SupabaseSync.isConfigured && navigator.onLine) {
         SupabaseSync.deleteWeekBlocks(curWeekKey);
+      } else if (typeof PendingSyncManager !== 'undefined') {
+        PendingSyncManager.enqueue({
+          type: 'delete_week_blocks',
+          key: curWeekKey,
+          data: { weekKey: curWeekKey }
+        });
       }
 
       renderCurrentView();

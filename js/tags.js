@@ -70,8 +70,14 @@ function addNewCustomTag() {
   nameInput.value = '';
   saveTagsData();
 
-  if (SupabaseSync.isConfigured) {
+  if (SupabaseSync.isConfigured && navigator.onLine) {
     SupabaseSync.upsertTag(newTag);
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    PendingSyncManager.enqueue({
+      type: 'upsert_tag',
+      key: newTag.id,
+      data: newTag
+    });
   }
 
   showToast(I18N.t('toast_tag_added', { name }));
@@ -81,8 +87,14 @@ function updateTagColor(idx, newColor) {
   if (customTags[idx]) {
     customTags[idx].color = newColor;
     saveTagsData();
-    if (SupabaseSync.isConfigured) {
+    if (SupabaseSync.isConfigured && navigator.onLine) {
       SupabaseSync.upsertTag(customTags[idx]);
+    } else if (typeof PendingSyncManager !== 'undefined') {
+      PendingSyncManager.enqueue({
+        type: 'upsert_tag',
+        key: customTags[idx].id,
+        data: customTags[idx]
+      });
     }
   }
 }
@@ -126,7 +138,7 @@ function deleteCustomTag(idx) {
   saveTasksBank();
   saveTagsData();
 
-  if (SupabaseSync.isConfigured) {
+  if (SupabaseSync.isConfigured && navigator.onLine) {
     if (blocksToUpdate.length > 0) {
       if (typeof SupabaseSync.batchUpsertBlocks === 'function') {
         SupabaseSync.batchUpsertBlocks(blocksToUpdate);
@@ -136,6 +148,26 @@ function deleteCustomTag(idx) {
     }
     tasksToUpdate.forEach(t => SupabaseSync.upsertTask(t));
     SupabaseSync.deleteTag(deletedId);
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    blocksToUpdate.forEach(b => {
+      PendingSyncManager.enqueue({
+        type: 'upsert_block',
+        key: `${b.weekKey}-${b.dayId}-${b.blockIndex}`,
+        data: { weekKey: b.weekKey, dayId: b.dayId, blockIndex: b.blockIndex, block: b.blockData }
+      });
+    });
+    tasksToUpdate.forEach(t => {
+      PendingSyncManager.enqueue({
+        type: 'upsert_task',
+        key: t.id,
+        data: t
+      });
+    });
+    PendingSyncManager.enqueue({
+      type: 'delete_tag',
+      key: deletedId,
+      data: { id: deletedId }
+    });
   }
 
   showToast(I18N.t('toast_tag_deleted'));
