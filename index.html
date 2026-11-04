@@ -527,8 +527,8 @@
     </div>
   </div>
 
-  <!-- 6. Confirmation Dialog -->
-  <div id="confirmDialog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+  <!-- 6. Confirmation Dialog (Higher z-index to appear on top of other modals) -->
+  <div id="confirmDialog" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-5 text-center">
       <div id="confirmIconBox" class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-3">
         <i data-lucide="alert-triangle" class="w-6 h-6"></i>
@@ -778,8 +778,8 @@
             </button>
           </div>
 
-          <!-- Danger zone: Resets -->
-          <div class="mt-4 p-3.5 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 space-y-2">
+          <!-- Danger zone: Resets & Complete Purges -->
+          <div class="mt-4 p-3.5 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 space-y-2.5">
             <span class="text-xs font-bold text-rose-700 dark:text-rose-400 block" data-i18n="reset_btn">Reset Data</span>
             <div class="flex flex-col sm:flex-row gap-2">
               <button id="triggerResetDayBtn" class="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-medium hover:bg-rose-50 transition flex items-center justify-center gap-1.5 min-h-[38px]">
@@ -789,6 +789,19 @@
               <button id="triggerResetWeekBtn" class="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-medium hover:bg-rose-50 transition flex items-center justify-center gap-1.5 min-h-[38px]">
                 <i data-lucide="trash" class="w-3.5 h-3.5"></i>
                 <span data-i18n="reset_week_btn">Clear Week's Schedule</span>
+              </button>
+            </div>
+
+            <!-- Complete Wipe Actions (Local Store & Remote Database) -->
+            <div class="pt-2 border-t border-rose-200/60 dark:border-rose-900/40 flex flex-col gap-2">
+              <button id="triggerClearLocalStoreBtn" class="w-full px-3 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center justify-center gap-2 min-h-[40px]">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span data-i18n="clear_local_store_btn">Clear Local Data Store</span>
+              </button>
+
+              <button id="triggerClearCloudDbBtn" class="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border-2 border-rose-500 text-rose-600 dark:text-rose-400 hover:bg-rose-100/50 dark:hover:bg-rose-950/40 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 min-h-[40px]">
+                <i data-lucide="database-zap" class="w-4 h-4 text-rose-500"></i>
+                <span data-i18n="clear_supabase_db_btn">Clean Cloud Database (Supabase)</span>
               </button>
             </div>
           </div>

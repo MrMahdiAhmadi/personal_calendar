@@ -502,6 +502,24 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const triggerClearLocalStoreBtn = document.getElementById('triggerClearLocalStoreBtn');
+  if (triggerClearLocalStoreBtn) {
+    triggerClearLocalStoreBtn.addEventListener('click', () => {
+      if (typeof promptClearLocalStore === 'function') {
+        promptClearLocalStore();
+      }
+    });
+  }
+
+  const triggerClearCloudDbBtn = document.getElementById('triggerClearCloudDbBtn');
+  if (triggerClearCloudDbBtn) {
+    triggerClearCloudDbBtn.addEventListener('click', () => {
+      if (typeof promptClearCloudDatabase === 'function') {
+        promptClearCloudDatabase();
+      }
+    });
+  }
+
   const confirmCancelBtn = document.getElementById('confirmCancelBtn');
   if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', closeConfirmDialog);
 
