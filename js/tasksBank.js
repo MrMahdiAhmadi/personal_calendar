@@ -445,6 +445,100 @@ function restoreSharedTaskFromArchive(taskId) {
   }
 }
 
+/**
+ * Helper: Parse week key format 'w-YYYY-WW' into numeric year and week number.
+ */
+function parseWeekKey(wKey) {
+  if (typeof wKey !== 'string') return null;
+  const match = wKey.match(/^w-(\d+)-(\d+)$/);
+  if (!match) return null;
+  return { year: parseInt(match[1], 10), week: parseInt(match[2], 10) };
+}
+
+/**
+ * Helper: Compare two week keys.
+ * Returns negative if wKeyA < wKeyB, 0 if equal, positive if wKeyA > wKeyB.
+ */
+function compareWeekKeys(wKeyA, wKeyB) {
+  if (wKeyA === wKeyB) return 0;
+  const pA = parseWeekKey(wKeyA);
+  const pB = parseWeekKey(wKeyB);
+  if (!pA || !pB) return 0;
+  if (pA.year !== pB.year) return pA.year - pB.year;
+  return pA.week - pB.week;
+}
+
+/**
+ * Determines whether a time block (weekKey, dayId, blockIndex) has already passed its end time
+ * relative to the current real-time clock.
+ */
+function isBlockTimePassed(wKey, dayId, blockIndex) {
+  const currentTime = typeof getCurrentTime === 'function' ? getCurrentTime() : { todayIranDayId: 'sat', totalMinutesOfDay: 0 };
+  const curWeekKey = typeof getWeekKey === 'function' ? getWeekKey(0) : wKey;
+  const metadataList = typeof SCHEDULE_METADATA !== 'undefined' ? SCHEDULE_METADATA : [];
+
+  const cmp = compareWeekKeys(wKey, curWeekKey);
+  if (cmp < 0) return true;  // Past week
+  if (cmp > 0) return false; // Future week
+
+  const DAYS_ORDER = { sat: 0, sun: 1, mon: 2, tue: 3, wed: 4, thu: 5, fri: 6 };
+  const targetDayIdx = DAYS_ORDER[dayId] !== undefined ? DAYS_ORDER[dayId] : 0;
+  const currentDayIdx = DAYS_ORDER[currentTime.todayIranDayId] !== undefined ? DAYS_ORDER[currentTime.todayIranDayId] : 0;
+
+  const meta = metadataList[blockIndex];
+  if (!meta) {
+    if (targetDayIdx < currentDayIdx) return true;
+    if (targetDayIdx > currentDayIdx) return false;
+    return false;
+  }
+
+  const { startMin, endMin } = meta;
+  const blockEndMinutesFromWeekStart = targetDayIdx * 1440 + (startMin < endMin ? endMin : 1440 + endMin);
+  const currentMinutesFromWeekStart = currentDayIdx * 1440 + currentTime.totalMinutesOfDay;
+
+  return currentMinutesFromWeekStart >= blockEndMinutesFromWeekStart;
+}
+
+/**
+ * Checks if a task is actively assigned to any block OTHER than the specified block
+ * whose scheduled time has not yet ended.
+ */
+function isTaskAssignedToOtherActiveBlock(taskId, targetWeekKey, targetDayId, targetBlockIndex) {
+  if (typeof weeksData === 'undefined' || !weeksData) return false;
+
+  for (const wKey of Object.keys(weeksData)) {
+    if (wKey.startsWith('__')) continue;
+    const week = weeksData[wKey];
+    if (!week) continue;
+
+    for (const dId of Object.keys(week)) {
+      const day = week[dId];
+      if (!day) continue;
+
+      for (const bIdxStr of Object.keys(day)) {
+        const bIdx = parseInt(bIdxStr, 10);
+        if (wKey === targetWeekKey && dId === targetDayId && bIdx === targetBlockIndex) {
+          continue; // same block as currently being edited
+        }
+
+        const blk = day[bIdxStr];
+        if (!blk || !blk.blockTasks || !blk.blockTasks[taskId] || !blk.blockTasks[taskId].assigned) {
+          continue;
+        }
+
+        // Task is assigned to this other block. Has that block already ended?
+        const passed = isBlockTimePassed(wKey, dId, bIdx);
+        if (!passed) {
+          // Block is ongoing or in the future -> task is actively assigned!
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 /* Block Modal Task Checklist */
 function renderModalBlockTasks() {
   if (!activeModalTarget) return;
@@ -453,13 +547,19 @@ function renderModalBlockTasks() {
   const selectedTagId = document.getElementById('modalTagSelect').value;
 
   // Filter tasks for this tag:
-  // Show active tasks, PLUS any task that was already assigned to this block (even if now completed)
-  // But do NOT show completed/archived tasks from other blocks or unassigned completed tasks!
+  // 1. Show active tasks matching selected tag.
+  // 2. If already assigned to this block, keep it visible (even if completed or assigned).
+  // 3. If not assigned to this block:
+  //    - Exclude if completed/archived.
+  //    - Exclude if currently assigned to any OTHER block whose time has not passed yet.
+  //    - Include if previously assigned to a past/ended block but NOT completed (can be reassigned).
   let tagTasks = sharedTasksBank.filter(t => {
     if (t.tagId !== selectedTagId) return false;
     const isAssignedToThisBlock = block.blockTasks && block.blockTasks[t.id] && block.blockTasks[t.id].assigned;
     if (isAssignedToThisBlock) return true;
-    return !t.completed;
+    if (t.completed) return false;
+    if (isTaskAssignedToOtherActiveBlock(t.id, weekKey, dayId, blockIndex)) return false;
+    return true;
   });
 
   // Sort tasks according to block.taskOrder if defined
@@ -532,12 +632,14 @@ function reorderBlockTasks(sourceId, targetId, insertBefore) {
   const block = getBlockData(weekKey, dayId, blockIndex);
   const selectedTagId = document.getElementById('modalTagSelect').value;
 
-  // Retrieve current ordered list of tasks for this tag
+  // Retrieve current ordered list of tasks for this tag matching visible checklist criteria
   let currentTasks = sharedTasksBank.filter(t => {
     if (t.tagId !== selectedTagId) return false;
     const isAssigned = block.blockTasks && block.blockTasks[t.id] && block.blockTasks[t.id].assigned;
     if (isAssigned) return true;
-    return !t.completed;
+    if (t.completed) return false;
+    if (isTaskAssignedToOtherActiveBlock(t.id, weekKey, dayId, blockIndex)) return false;
+    return true;
   });
 
   if (Array.isArray(block.taskOrder) && block.taskOrder.length > 0) {
