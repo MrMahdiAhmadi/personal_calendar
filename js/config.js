@@ -17,7 +17,8 @@ const CONFIG = {
   SUPABASE_CONFIG_KEY: 'tb_supabase_config',
   SETTINGS_KEY: 'tb_app_settings_v1',
   TEMPLATES_KEY: 'tb_weekly_templates_v1',
-  DELETED_TASKS_KEY: 'tb_deleted_tasks_bank_v1'
+  DELETED_TASKS_KEY: 'tb_deleted_tasks_bank_v1',
+  PENDING_SYNC_QUEUE_KEY: 'tb_pending_sync_queue_v1'
 };
 
 const DEFAULT_SETTINGS = {

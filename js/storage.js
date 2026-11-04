@@ -145,46 +145,116 @@ function loadAppData() {
   selectedDayId = currentTime.todayIranDayId;
   ensureWeekStructure(getWeekKey(weekOffset));
 
-  // Asynchronously sync from Supabase if connected
-  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
-    syncFromSupabase();
+  // On load, trigger sync if Supabase is configured and online (via triggerDatabaseSync to process any offline queue first)
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
+    triggerDatabaseSync(false);
   }
-
-  // Initialize auto-sync scheduler
-  initAutoSync();
 }
 
-let autoSyncTimerId = null;
-
+// Background auto-sync timers disabled to avoid race conditions and ghost re-uploads
 function initAutoSync() {
   stopAutoSync();
-
-  const enabled = AppSettings.get('autoSyncEnabled') !== false;
-  const intervalMins = parseInt(AppSettings.get('autoSyncInterval'), 10);
-
-  // If enabled and interval > 0, schedule periodic sync
-  if (enabled && !isNaN(intervalMins) && intervalMins > 0) {
-    const ms = intervalMins * 60 * 1000;
-    autoSyncTimerId = setInterval(() => {
-      console.log(`[AutoSync] Triggering scheduled sync (${intervalMins}m interval)...`);
-      triggerDatabaseSync(false);
-    }, ms);
-    console.log(`[AutoSync] Scheduled every ${intervalMins} minutes.`);
-  } else {
-    console.log('[AutoSync] Disabled.');
-  }
 }
 
 function stopAutoSync() {
-  if (autoSyncTimerId) {
-    clearInterval(autoSyncTimerId);
-    autoSyncTimerId = null;
-  }
+  // No-op: automatic interval sync is intentionally disabled
 }
 
 function restartAutoSync() {
-  initAutoSync();
+  // No-op: automatic interval sync is intentionally disabled
 }
+
+/* =====================================================================
+   Pending Offline Sync Manager
+   Ensures that only intentional, unsent offline modifications get pushed
+   to Supabase, preventing old local cache from resurrecting ghost items.
+   ===================================================================== */
+const PendingSyncManager = {
+  getQueue() {
+    try {
+      const raw = SafeStorage.getItem(CONFIG.PENDING_SYNC_QUEUE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  hasPending() {
+    return this.getQueue().length > 0;
+  },
+
+  enqueue(action) {
+    try {
+      const queue = this.getQueue();
+      // Deduplicate consecutive updates to same entity
+      const filtered = queue.filter(item => !(item.type === action.type && item.key === action.key));
+      filtered.push({
+        ...action,
+        timestamp: Date.now()
+      });
+      SafeStorage.setItem(CONFIG.PENDING_SYNC_QUEUE_KEY, JSON.stringify(filtered));
+    } catch (e) {
+      console.warn('[PendingSyncManager] enqueue error:', e);
+    }
+  },
+
+  clear() {
+    try {
+      SafeStorage.setItem(CONFIG.PENDING_SYNC_QUEUE_KEY, JSON.stringify([]));
+    } catch (e) {}
+  },
+
+  async flush() {
+    if (!SupabaseSync.isConfigured || !navigator.onLine) return false;
+    const queue = this.getQueue();
+    if (queue.length === 0) return true;
+
+    console.log(`[PendingSyncManager] Flushing ${queue.length} pending offline actions...`);
+    for (const item of queue) {
+      try {
+        switch (item.type) {
+          case 'upsert_tag':
+            await SupabaseSync.upsertTag(item.data);
+            break;
+          case 'delete_tag':
+            await SupabaseSync.deleteTag(item.data.id);
+            break;
+          case 'upsert_task':
+            await SupabaseSync.upsertTask(item.data);
+            break;
+          case 'delete_task':
+            await SupabaseSync.deleteTask(item.data.id);
+            break;
+          case 'upsert_block':
+            await SupabaseSync.upsertBlock(item.data.weekKey, item.data.dayId, item.data.blockIndex, item.data.block);
+            break;
+          case 'delete_day_blocks':
+            await SupabaseSync.deleteDayBlocks(item.data.weekKey, item.data.dayId);
+            break;
+          case 'delete_week_blocks':
+            await SupabaseSync.deleteWeekBlocks(item.data.weekKey);
+            break;
+          case 'upsert_template':
+            await SupabaseSync.upsertTemplate(item.data);
+            break;
+          case 'delete_template':
+            await SupabaseSync.deleteTemplate(item.data.id);
+            break;
+          case 'upsert_settings':
+            await SupabaseSync.upsertSettings(item.data);
+            break;
+          default:
+            console.warn('[PendingSyncManager] Unknown action type:', item.type);
+        }
+      } catch (err) {
+        console.error('[PendingSyncManager] Error executing queued action:', item, err);
+      }
+    }
+
+    this.clear();
+    return true;
+  }
+};
 
 let isSyncInProgress = false;
 
@@ -232,7 +302,14 @@ async function triggerDatabaseSync(interactive = false) {
   }
 
   try {
-    await syncFromSupabase();
+    // 1. If any offline changes were made while disconnected, push them first
+    if (PendingSyncManager.hasPending()) {
+      await PendingSyncManager.flush();
+    }
+
+    // 2. Fetch authoritative cloud state and overwrite local storage
+    const updated = await syncFromSupabase();
+
     if (interactive) {
       const successMsg = typeof I18N !== 'undefined'
         ? I18N.t('toast_sync_manual_success')
@@ -240,7 +317,7 @@ async function triggerDatabaseSync(interactive = false) {
       showToast(successMsg);
     }
   } catch (err) {
-    console.error('[Sync] Manual/scheduled sync error:', err);
+    console.error('[Sync] Manual/refresh sync error:', err);
     if (interactive) {
       showToast('Error syncing with database.');
     }
@@ -269,8 +346,12 @@ function setManualSyncBtnSpinning(isSpinning) {
   }
 }
 
+/**
+ * Fetches authoritative cloud state from Supabase and overwrites local storage.
+ * Never re-uploads old local records; Supabase is the sole source of truth.
+ */
 async function syncFromSupabase() {
-  if (!SupabaseSync.isConfigured) return;
+  if (!SupabaseSync.isConfigured || !navigator.onLine) return false;
 
   try {
     const [cloudTags, cloudTasks, cloudBlocks, cloudSettings, cloudTemplates] = await Promise.all([
@@ -283,7 +364,8 @@ async function syncFromSupabase() {
 
     let changed = false;
 
-    if (cloudSettings && typeof cloudSettings === 'object') {
+    // 1. App Settings: Overwrite from cloud
+    if (cloudSettings && typeof cloudSettings === 'object' && Object.keys(cloudSettings).length > 0) {
       let scheduleNeedsRebuild = false;
       const rawWork = cloudSettings.workBlockMins;
       const rawBreak = cloudSettings.breakBlockMins;
@@ -337,7 +419,6 @@ async function syncFromSupabase() {
         );
         changed = true;
 
-        // If Settings modal is currently open, update its inputs
         const workInput = document.getElementById('settingsWorkBlockInput');
         const breakInput = document.getElementById('settingsBreakBlockInput');
         const bedInput = document.getElementById('settingsBedtimeInput');
@@ -350,25 +431,12 @@ async function syncFromSupabase() {
       }
     }
 
-    // 1. Supabase as Authoritative Source of Truth for Custom Tags:
-    // When Supabase is configured and returns tags, cloud tags define the authoritative set.
+    // 2. Custom Tags: Supabase is Authoritative Source of Truth.
+    // Overwrite local customTags completely with cloudTags if available.
     if (cloudTags && Array.isArray(cloudTags)) {
-      const tagMap = new Map();
-      cloudTags.forEach(t => tagMap.set(t.id, t));
-
-      // If there are existing local custom tags created while offline, also sync them up
-      customTags.forEach(localTag => {
-        if (!tagMap.has(localTag.id)) {
-          tagMap.set(localTag.id, localTag);
-          if (SupabaseSync.isConfigured) {
-            SupabaseSync.upsertTag(localTag);
-          }
-        }
-      });
-
-      const updatedTags = Array.from(tagMap.values());
-      if (JSON.stringify(updatedTags) !== JSON.stringify(customTags)) {
-        customTags = updatedTags;
+      const cloudTagsClean = cloudTags.map(t => ({ id: t.id, name: t.name, color: t.color }));
+      if (JSON.stringify(cloudTagsClean) !== JSON.stringify(customTags)) {
+        customTags = cloudTagsClean;
         SafeStorage.setItem(CONFIG.TAGS_KEY, JSON.stringify(customTags));
         if (typeof populateTagsDropdowns === 'function') populateTagsDropdowns();
         if (typeof renderCustomTagsList === 'function') renderCustomTagsList();
@@ -377,152 +445,53 @@ async function syncFromSupabase() {
       }
     }
 
-    // 2. Supabase as Authoritative Source of Truth for Task Bank:
-    // Cloud task state is the primary reference. Local changes made offline are uploaded.
+    // 3. Task Bank: Supabase is Authoritative Source of Truth.
+    // Overwrite local sharedTasksBank completely with cloudTasks.
+    // Never re-upload existing local tasks to the cloud.
     if (cloudTasks && Array.isArray(cloudTasks)) {
-      const deletedIds = new Set(typeof getDeletedTaskIds === 'function' ? getDeletedTaskIds() : []);
-      const cloudTaskMap = new Map();
-      cloudTasks.forEach(ct => cloudTaskMap.set(ct.id, ct));
+      const cloudTasksClean = cloudTasks.map(t => ({
+        id: t.id,
+        tagId: t.tagId,
+        title: t.title,
+        completed: !!t.completed,
+        completedAt: t.completedAt || null
+      }));
 
-      const mergedTasks = [];
-      const seenIds = new Set();
-
-      // Cloud tasks take precedence:
-      for (const ct of cloudTasks) {
-        if (deletedIds.has(ct.id)) {
-          SupabaseSync.deleteTask(ct.id);
-          continue;
-        }
-        mergedTasks.push(ct);
-        seenIds.add(ct.id);
-      }
-
-      // Check if any offline-created local tasks need to be uploaded to Supabase
-      for (const localTask of sharedTasksBank) {
-        if (deletedIds.has(localTask.id)) {
-          if (cloudTaskMap.has(localTask.id)) {
-            SupabaseSync.deleteTask(localTask.id);
-          }
-          continue;
-        }
-
-        if (!seenIds.has(localTask.id)) {
-          mergedTasks.push(localTask);
-          seenIds.add(localTask.id);
-          if (SupabaseSync.isConfigured) {
-            SupabaseSync.upsertTask(localTask);
-          }
-        }
-      }
-
-      const beforeStr = JSON.stringify(sharedTasksBank);
-      const afterStr = JSON.stringify(mergedTasks);
-      if (beforeStr !== afterStr) {
-        sharedTasksBank = mergedTasks;
+      if (JSON.stringify(cloudTasksClean) !== JSON.stringify(sharedTasksBank)) {
+        sharedTasksBank = cloudTasksClean;
         SafeStorage.setItem(CONFIG.TASKS_BANK_KEY, JSON.stringify(sharedTasksBank));
         if (typeof renderTasksHubList === 'function') renderTasksHubList();
-        if (typeof activeModalTarget !== 'undefined' && activeModalTarget && typeof renderModalBlockTasks === 'function') renderModalBlockTasks();
+        if (typeof activeModalTarget !== 'undefined' && activeModalTarget && typeof renderModalBlockTasks === 'function') {
+          renderModalBlockTasks();
+        }
         changed = true;
       }
     }
 
-    // 3. Supabase as Authoritative Source of Truth for Scheduled Blocks:
-    // Supabase cloud data is the reference. When Device 2 edits any block, Device 1 reflects it completely.
+    // 4. Scheduled Blocks: Supabase is Authoritative Source of Truth.
+    // Overwrite local weeksData completely with cloudBlocks.
+    // Never re-upload missing blocks to the cloud.
     if (cloudBlocks && typeof cloudBlocks === 'object') {
-      let blocksChanged = false;
+      const curStr = JSON.stringify(weeksData);
+      const cloudStr = JSON.stringify(cloudBlocks);
 
-      // Supabase is the primary reference: overwrite/update local blocks with cloud blocks
-      Object.keys(cloudBlocks).forEach(wKey => {
-        if (!weeksData[wKey]) {
-          weeksData[wKey] = {};
-        }
-        Object.keys(cloudBlocks[wKey]).forEach(dId => {
-          if (!weeksData[wKey][dId]) {
-            weeksData[wKey][dId] = {};
-          }
-          Object.keys(cloudBlocks[wKey][dId]).forEach(bIdx => {
-            const cloudBlock = cloudBlocks[wKey][dId][bIdx];
-            const localBlock = weeksData[wKey][dId][bIdx];
-
-            // Normalize block comparison ignoring updatedAt
-            const normalizedCloud = {
-              title: cloudBlock.title || '',
-              status: cloudBlock.status || 'pending',
-              tagId: cloudBlock.tagId || 'misc',
-              notes: cloudBlock.notes || '',
-              blockTasks: cloudBlock.blockTasks || {},
-              taskOrder: Array.isArray(cloudBlock.taskOrder) ? cloudBlock.taskOrder : [],
-              pomodoro: (cloudBlock.pomodoro && typeof cloudBlock.pomodoro === 'object') ? cloudBlock.pomodoro : { sessions: 0, totalFocusMinutes: 0 }
-            };
-
-            const normalizedLocal = localBlock ? {
-              title: localBlock.title || '',
-              status: localBlock.status || 'pending',
-              tagId: localBlock.tagId || 'misc',
-              notes: localBlock.notes || '',
-              blockTasks: localBlock.blockTasks || {},
-              taskOrder: Array.isArray(localBlock.taskOrder) ? localBlock.taskOrder : [],
-              pomodoro: (localBlock.pomodoro && typeof localBlock.pomodoro === 'object') ? localBlock.pomodoro : { sessions: 0, totalFocusMinutes: 0 }
-            } : null;
-
-            if (!normalizedLocal || JSON.stringify(normalizedLocal) !== JSON.stringify(normalizedCloud)) {
-              weeksData[wKey][dId][bIdx] = {
-                ...normalizedCloud
-              };
-              blocksChanged = true;
-            }
-          });
-        });
-      });
-
-      // Also check if local memory had blocks that were never pushed to Supabase (e.g. offline created)
-      const offlineBlocksToUpload = [];
-      Object.keys(weeksData).forEach(wKey => {
-        if (wKey.startsWith('__')) return;
-        Object.keys(weeksData[wKey] || {}).forEach(dId => {
-          Object.keys(weeksData[wKey][dId] || {}).forEach(bIdx => {
-            const localBlock = weeksData[wKey][dId][bIdx];
-            const hasCloudBlock = cloudBlocks[wKey] && cloudBlocks[wKey][dId] && cloudBlocks[wKey][dId][bIdx];
-            if (!hasCloudBlock && localBlock) {
-              const hasContent = (localBlock.title && localBlock.title.trim() !== '') ||
-                                (localBlock.notes && localBlock.notes.trim() !== '') ||
-                                (localBlock.status && localBlock.status !== 'pending') ||
-                                (localBlock.blockTasks && Object.keys(localBlock.blockTasks).length > 0) ||
-                                (localBlock.tagId && localBlock.tagId !== 'misc');
-              if (hasContent) {
-                offlineBlocksToUpload.push({
-                  weekKey: wKey,
-                  dayId: dId,
-                  blockIndex: parseInt(bIdx, 10),
-                  blockData: localBlock
-                });
-              }
-            }
-          });
-        });
-      });
-
-      if (offlineBlocksToUpload.length > 0 && SupabaseSync.isConfigured) {
-        if (typeof SupabaseSync.batchUpsertBlocks === 'function') {
-          SupabaseSync.batchUpsertBlocks(offlineBlocksToUpload);
-        } else {
-          offlineBlocksToUpload.forEach(item => {
-            SupabaseSync.upsertBlock(item.weekKey, item.dayId, item.blockIndex, item.blockData);
-          });
-        }
-      }
-
-      if (blocksChanged) {
+      if (curStr !== cloudStr) {
+        weeksData = cloudBlocks;
+        const curWeekKey = getWeekKey(weekOffset);
+        ensureWeekStructure(curWeekKey);
         SafeStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(weeksData));
         changed = true;
       }
     }
 
+    // 5. Weekly Templates: Supabase is Authoritative Source of Truth.
     if (cloudTemplates && Array.isArray(cloudTemplates)) {
-      weeklyTemplates = cloudTemplates;
-      SafeStorage.setItem(CONFIG.TEMPLATES_KEY, JSON.stringify(weeklyTemplates));
-      if (typeof renderTemplatesList === 'function') renderTemplatesList();
-      changed = true;
+      if (JSON.stringify(cloudTemplates) !== JSON.stringify(weeklyTemplates)) {
+        weeklyTemplates = cloudTemplates;
+        SafeStorage.setItem(CONFIG.TEMPLATES_KEY, JSON.stringify(weeklyTemplates));
+        if (typeof renderTemplatesList === 'function') renderTemplatesList();
+        changed = true;
+      }
     }
 
     if (changed) {
@@ -530,13 +499,12 @@ async function syncFromSupabase() {
       renderCurrentView();
       updateCompletionCounters();
       if (typeof updateLiveIranTicker === 'function') updateLiveIranTicker();
-      const toastMsg = (typeof I18N !== 'undefined' && I18N.t)
-        ? I18N.t('toast_cloud_synced')
-        : 'Data synced with Supabase ☁️';
-      showToast(toastMsg);
     }
+
+    return true;
   } catch (e) {
-    console.warn('[Sync] Background sync error:', e);
+    console.warn('[Sync] syncFromSupabase error:', e);
+    return false;
   }
 }
 
@@ -564,12 +532,27 @@ function saveTasksBank() {
 
 function saveTemplatesData(templateToSync = null) {
   SafeStorage.setItem(CONFIG.TEMPLATES_KEY, JSON.stringify(weeklyTemplates));
-  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
     if (templateToSync) {
       SupabaseSync.upsertTemplate(templateToSync);
     } else {
-      // Sync all or save fallback
       weeklyTemplates.forEach(t => SupabaseSync.upsertTemplate(t));
+    }
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    if (templateToSync) {
+      PendingSyncManager.enqueue({
+        type: 'upsert_template',
+        key: templateToSync.id,
+        data: templateToSync
+      });
+    } else {
+      weeklyTemplates.forEach(t => {
+        PendingSyncManager.enqueue({
+          type: 'upsert_template',
+          key: t.id,
+          data: t
+        });
+      });
     }
   }
 }
@@ -704,11 +687,21 @@ function applyRoutineToWeek(targetWeekKey, routineBlocksData) {
   saveAppData();
 
   if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && blocksToSync.length > 0) {
-    if (typeof SupabaseSync.batchUpsertBlocks === 'function') {
-      SupabaseSync.batchUpsertBlocks(blocksToSync);
-    } else {
+    if (navigator.onLine) {
+      if (typeof SupabaseSync.batchUpsertBlocks === 'function') {
+        SupabaseSync.batchUpsertBlocks(blocksToSync);
+      } else {
+        blocksToSync.forEach(item => {
+          SupabaseSync.upsertBlock(item.weekKey, item.dayId, item.blockIndex, item.blockData);
+        });
+      }
+    } else if (typeof PendingSyncManager !== 'undefined') {
       blocksToSync.forEach(item => {
-        SupabaseSync.upsertBlock(item.weekKey, item.dayId, item.blockIndex, item.blockData);
+        PendingSyncManager.enqueue({
+          type: 'upsert_block',
+          key: `${item.weekKey}-${item.dayId}-${item.blockIndex}`,
+          data: { weekKey: item.weekKey, dayId: item.dayId, blockIndex: item.blockIndex, block: item.blockData }
+        });
       });
     }
   }

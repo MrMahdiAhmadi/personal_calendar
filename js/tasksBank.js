@@ -386,8 +386,14 @@ function addSharedTaskFromHub() {
   titleInput.value = '';
   saveTasksBank();
 
-  if (SupabaseSync.isConfigured) {
+  if (SupabaseSync.isConfigured && navigator.onLine) {
     SupabaseSync.upsertTask(newTask);
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    PendingSyncManager.enqueue({
+      type: 'upsert_task',
+      key: newTask.id,
+      data: newTask
+    });
   }
 
   showToast(I18N.t('toast_task_added'));
@@ -398,8 +404,14 @@ function updateSharedTaskTitle(id, newTitle) {
   if (task && newTitle.trim()) {
     task.title = newTitle.trim();
     saveTasksBank();
-    if (SupabaseSync.isConfigured) {
+    if (SupabaseSync.isConfigured && navigator.onLine) {
       SupabaseSync.upsertTask(task);
+    } else if (typeof PendingSyncManager !== 'undefined') {
+      PendingSyncManager.enqueue({
+        type: 'upsert_task',
+        key: task.id,
+        data: task
+      });
     }
   }
 }
@@ -408,8 +420,14 @@ function deleteSharedTask(id) {
   sharedTasksBank = sharedTasksBank.filter(t => t.id !== id);
   recordDeletedTaskId(id);
   saveTasksBank();
-  if (SupabaseSync.isConfigured) {
+  if (SupabaseSync.isConfigured && navigator.onLine) {
     SupabaseSync.deleteTask(id);
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    PendingSyncManager.enqueue({
+      type: 'delete_task',
+      key: id,
+      data: { id }
+    });
   }
   showToast(I18N.t('toast_task_deleted'));
 }
@@ -420,8 +438,14 @@ function archiveSharedTaskDirectly(taskId) {
     task.completed = true;
     task.completedAt = new Date().toISOString();
     saveTasksBank();
-    if (SupabaseSync.isConfigured) {
+    if (SupabaseSync.isConfigured && navigator.onLine) {
       SupabaseSync.upsertTask(task);
+    } else if (typeof PendingSyncManager !== 'undefined') {
+      PendingSyncManager.enqueue({
+        type: 'upsert_task',
+        key: task.id,
+        data: task
+      });
     }
     renderTasksHubFilterTabs();
     renderTasksHubList();
@@ -436,8 +460,14 @@ function restoreSharedTaskFromArchive(taskId) {
     task.completed = false;
     task.completedAt = null;
     saveTasksBank();
-    if (SupabaseSync.isConfigured) {
+    if (SupabaseSync.isConfigured && navigator.onLine) {
       SupabaseSync.upsertTask(task);
+    } else if (typeof PendingSyncManager !== 'undefined') {
+      PendingSyncManager.enqueue({
+        type: 'upsert_task',
+        key: task.id,
+        data: task
+      });
     }
     renderTasksHubFilterTabs();
     renderTasksHubList();
@@ -669,8 +699,14 @@ function reorderBlockTasks(sourceId, targetId, insertBefore) {
   reorderSharedTasksBankRelativeTo(sourceId, targetId, insertBefore);
 
   saveAppData();
-  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
     SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    PendingSyncManager.enqueue({
+      type: 'upsert_block',
+      key: `${weekKey}-${dayId}-${blockIndex}`,
+      data: { weekKey, dayId, blockIndex, block }
+    });
   }
 
   renderModalBlockTasks();
@@ -703,8 +739,14 @@ function toggleBlockTaskAssigned(taskId, isAssigned) {
   }
   block.blockTasks[taskId].assigned = isAssigned;
   saveAppData();
-  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+  if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
     SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    PendingSyncManager.enqueue({
+      type: 'upsert_block',
+      key: `${weekKey}-${dayId}-${blockIndex}`,
+      data: { weekKey, dayId, blockIndex, block }
+    });
   }
   renderModalBlockTasks();
 }
@@ -723,14 +765,26 @@ function toggleBlockTaskCompleted(taskId) {
       bankTask.completed = isNowCompleted;
       bankTask.completedAt = isNowCompleted ? new Date().toISOString() : null;
       saveTasksBank();
-      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+      if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
         SupabaseSync.upsertTask(bankTask);
+      } else if (typeof PendingSyncManager !== 'undefined') {
+        PendingSyncManager.enqueue({
+          type: 'upsert_task',
+          key: bankTask.id,
+          data: bankTask
+        });
       }
     }
 
     saveAppData();
-    if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+    if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
       SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+    } else if (typeof PendingSyncManager !== 'undefined') {
+      PendingSyncManager.enqueue({
+        type: 'upsert_block',
+        key: `${weekKey}-${dayId}-${blockIndex}`,
+        data: { weekKey, dayId, blockIndex, block }
+      });
     }
     renderModalBlockTasks();
     renderCurrentView();
@@ -759,8 +813,14 @@ function addQuickTaskFromBlock() {
   sharedTasksBank.push(newTask);
   saveTasksBank();
 
-  if (SupabaseSync.isConfigured) {
+  if (SupabaseSync.isConfigured && navigator.onLine) {
     SupabaseSync.upsertTask(newTask);
+  } else if (typeof PendingSyncManager !== 'undefined') {
+    PendingSyncManager.enqueue({
+      type: 'upsert_task',
+      key: newTask.id,
+      data: newTask
+    });
   }
 
   // Assign to current block
@@ -770,8 +830,14 @@ function addQuickTaskFromBlock() {
     if (!block.blockTasks) block.blockTasks = {};
     block.blockTasks[newTask.id] = { assigned: true, completed: false };
     saveAppData();
-    if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured) {
+    if (typeof SupabaseSync !== 'undefined' && SupabaseSync.isConfigured && navigator.onLine) {
       SupabaseSync.upsertBlock(weekKey, dayId, blockIndex, block);
+    } else if (typeof PendingSyncManager !== 'undefined') {
+      PendingSyncManager.enqueue({
+        type: 'upsert_block',
+        key: `${weekKey}-${dayId}-${blockIndex}`,
+        data: { weekKey, dayId, blockIndex, block }
+      });
     }
   }
 
