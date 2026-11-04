@@ -143,23 +143,27 @@ begin
   end if;
 end $$;
 
--- Initial default tags seed data (Generic examples)
+-- Initial default tags seed data (only inserted if planner_tags is empty)
 insert into public.planner_tags (id, name, color)
-values
+select id, name, color from (values
   ('misc',     'General',          '#64748b'),
   ('work',     'Work & Projects',  '#2563eb'),
   ('study',    'Study & Learning', '#059669'),
   ('fitness',  'Health & Fitness', '#d97706'),
   ('leisure',  'Rest & Leisure',   '#9333ea')
+) as defaults(id, name, color)
+where not exists (select 1 from public.planner_tags limit 1)
 on conflict (id) do nothing;
 
--- Initial default tasks seed data (Generic examples)
+-- Initial default tasks seed data (only inserted if planner_tasks is empty)
 insert into public.planner_tasks (id, tag_id, title)
-values
+select id, tag_id, title from (values
   ('tsk-1', 'work',    'Plan daily priorities & review action items'),
   ('tsk-2', 'work',    'Deep focus on core task deliverables'),
   ('tsk-3', 'study',   'Read chapter / learn new concept'),
   ('tsk-4', 'study',   'Review notes & summarize key takeaways'),
   ('tsk-5', 'fitness', 'Light walk, stretch or workout'),
   ('tsk-6', 'misc',    'Clear inbox and organize workspace')
+) as defaults(id, tag_id, title)
+where not exists (select 1 from public.planner_tasks limit 1)
 on conflict (id) do nothing;
