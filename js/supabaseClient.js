@@ -120,19 +120,90 @@ const SupabaseSync = {
     if (!this.isConfigured || !this.client) return null;
     try {
       this.setStatus('syncing');
-      const { data, error } = await this.client
-        .from('planner_tasks')
-        .select('*')
-        .order('created_at', { ascending: true });
+
+      // Strategy 1: Check planner_settings sentinel key '__tasks__'
+      // This is schema-agnostic and faithfully stores task completion, ordering, and tags
+      let settingsTasks = null;
+      try {
+        const { data: sData, error: sErr } = await this.client
+          .from('planner_settings')
+          .select('value')
+          .eq('key', '__tasks__')
+          .maybeSingle();
+
+        if (!sErr && sData && Array.isArray(sData.value)) {
+          settingsTasks = sData.value.map(d => ({
+            id: d.id,
+            tagId: d.tagId || d.tag_id || 'misc',
+            title: d.title || '',
+            completed: !!d.completed,
+            completedAt: d.completedAt || d.completed_at || null
+          }));
+        }
+      } catch (e) {}
+
+      // Strategy 2: Query planner_tasks table
+      let tableTasks = null;
+      try {
+        const { data, error } = await this.client
+          .from('planner_tasks')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (!error && Array.isArray(data)) {
+          tableTasks = data.map(d => ({
+            id: d.id,
+            tagId: d.tag_id || 'misc',
+            title: d.title || '',
+            completed: !!d.completed,
+            completedAt: d.completed_at || null
+          }));
+        }
+      } catch (err) {
+        console.warn('[Supabase] fetchTasks table query failed:', err);
+      }
+
       this.setStatus('connected');
-      if (error) throw error;
-      return data ? data.map(d => ({
-        id: d.id,
-        tagId: d.tag_id,
-        title: d.title,
-        completed: !!d.completed,
-        completedAt: d.completed_at || null
-      })) : null;
+
+      // Reconcile Strategy 1 and Strategy 2:
+      // If planner_settings had task objects, enrich tableTasks with completion status
+      if (tableTasks && Array.isArray(tableTasks)) {
+        if (settingsTasks && Array.isArray(settingsTasks) && settingsTasks.length > 0) {
+          const map = new Map();
+          settingsTasks.forEach(st => map.set(st.id, st));
+
+          // Merge: use tableTasks as base but take completion status and exact properties from settingsTasks
+          const merged = tableTasks.map(tt => {
+            const st = map.get(tt.id);
+            if (st) {
+              return {
+                ...tt,
+                completed: !!st.completed,
+                completedAt: st.completedAt || tt.completedAt || null
+              };
+            }
+            return tt;
+          });
+
+          // Also include any tasks present in settingsTasks not yet indexed in tableTasks
+          const tableIds = new Set(tableTasks.map(t => t.id));
+          settingsTasks.forEach(st => {
+            if (!tableIds.has(st.id)) {
+              merged.push(st);
+            }
+          });
+
+          return merged;
+        }
+        return tableTasks;
+      }
+
+      // If table query returned nothing or failed, fallback directly to settingsTasks
+      if (settingsTasks !== null) {
+        return settingsTasks;
+      }
+
+      return null;
     } catch (err) {
       console.warn('[Supabase] fetchTasks failed:', err);
       this.setStatus('error');
@@ -141,19 +212,22 @@ const SupabaseSync = {
   },
 
   async upsertTask(task) {
-    if (!this.isConfigured || !this.client) return;
+    if (!this.isConfigured || !this.client || !task) return;
     try {
       this.setStatus('syncing');
-      const row = {
+
+      // 1. Try upserting full row to planner_tasks
+      const fullRow = {
         id: task.id,
         tag_id: task.tagId || 'misc',
         title: task.title,
         completed: !!task.completed,
         completed_at: task.completedAt || null
       };
+
       let { error } = await this.client
         .from('planner_tasks')
-        .upsert(row);
+        .upsert(fullRow);
 
       // Handle foreign key constraint if tag is not yet in cloud planner_tags
       if (error && error.message && error.message.includes('planner_tasks_tag_id_fkey')) {
@@ -161,43 +235,83 @@ const SupabaseSync = {
           const localTag = getTagById(task.tagId);
           if (localTag && localTag.id) {
             await this.upsertTag(localTag);
-            const retryRes = await this.client.from('planner_tasks').upsert(row);
+            const retryRes = await this.client.from('planner_tasks').upsert(fullRow);
             error = retryRes.error;
           }
         }
-        // If still error, retry without foreign key tag_id
         if (error) {
-          const fallbackRow = { ...row, tag_id: null };
+          const fallbackRow = { ...fullRow, tag_id: null };
           const fallbackRes = await this.client.from('planner_tasks').upsert(fallbackRow);
           error = fallbackRes.error;
         }
       }
 
-      this.setStatus('connected');
-      if (error) {
-        // Fallback for older schema without completed column
-        if (error.message && error.message.includes('column "completed"')) {
-          await this.client.from('planner_tasks').upsert({ id: task.id, tag_id: task.tagId || null, title: task.title });
-        } else {
-          console.error('[Supabase] upsertTask error:', error);
+      // If schema lacks 'completed' or 'completed_at' column, fallback to base columns
+      if (error && (error.code === 'PGRST204' || (error.message && (error.message.includes('completed') || error.message.includes('column'))))) {
+        const baseRow = {
+          id: task.id,
+          tag_id: task.tagId || null,
+          title: task.title
+        };
+        const baseRes = await this.client.from('planner_tasks').upsert(baseRow);
+        if (baseRes.error && baseRes.error.message && baseRes.error.message.includes('planner_tasks_tag_id_fkey')) {
+          baseRow.tag_id = null;
+          await this.client.from('planner_tasks').upsert(baseRow);
         }
       }
+
+      // 2. Always persist current sharedTasksBank array into planner_settings under '__tasks__'
+      // This guarantees completion status and ordering persist even on legacy schemas!
+      if (typeof sharedTasksBank !== 'undefined' && Array.isArray(sharedTasksBank)) {
+        try {
+          await this.client
+            .from('planner_settings')
+            .upsert({
+              key: '__tasks__',
+              value: sharedTasksBank,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'key' });
+        } catch (settingsErr) {
+          console.warn('[Supabase] __tasks__ sentinel upsert failed:', settingsErr);
+        }
+      }
+
+      this.setStatus('connected');
     } catch (e) {
+      console.error('[Supabase] upsertTask unexpected error:', e);
       this.setStatus('error');
     }
   },
 
   async deleteTask(taskId) {
-    if (!this.isConfigured || !this.client) return;
+    if (!this.isConfigured || !this.client || !taskId) return;
     try {
       this.setStatus('syncing');
+
+      // 1. Delete from planner_tasks table
       const { error } = await this.client
         .from('planner_tasks')
         .delete()
         .eq('id', taskId);
+
+      if (error) console.warn('[Supabase] deleteTask table error:', error);
+
+      // 2. Update __tasks__ array in planner_settings
+      if (typeof sharedTasksBank !== 'undefined' && Array.isArray(sharedTasksBank)) {
+        try {
+          await this.client
+            .from('planner_settings')
+            .upsert({
+              key: '__tasks__',
+              value: sharedTasksBank,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'key' });
+        } catch (settingsErr) {}
+      }
+
       this.setStatus('connected');
-      if (error) console.error('[Supabase] deleteTask error:', error);
     } catch (e) {
+      console.error('[Supabase] deleteTask error:', e);
       this.setStatus('error');
     }
   },
@@ -387,7 +501,7 @@ const SupabaseSync = {
         .upsert(row);
 
       // Graceful fallback if database table does not yet have task_order or pomodoro columns
-      if (error && error.message && (error.message.includes('task_order') || error.message.includes('pomodoro'))) {
+      if (error && (error.code === 'PGRST204' || (error.message && (error.message.includes('task_order') || error.message.includes('pomodoro') || error.message.includes('column'))))) {
         const legacyRow = {
           week_key: weekKey,
           day_id: dayId,
@@ -431,7 +545,25 @@ const SupabaseSync = {
       const chunkSize = 100;
       for (let i = 0; i < rows.length; i += chunkSize) {
         const chunk = rows.slice(i, i + chunkSize);
-        const { error } = await this.client.from('planner_blocks').upsert(chunk);
+        let { error } = await this.client.from('planner_blocks').upsert(chunk);
+
+        // Fallback for missing task_order / pomodoro columns in batch
+        if (error && (error.code === 'PGRST204' || (error.message && (error.message.includes('task_order') || error.message.includes('pomodoro') || error.message.includes('column'))))) {
+          const legacyChunk = chunk.map(r => ({
+            week_key: r.week_key,
+            day_id: r.day_id,
+            block_index: r.block_index,
+            title: r.title,
+            status: r.status,
+            tag_id: r.tag_id,
+            notes: r.notes,
+            block_tasks: r.block_tasks,
+            updated_at: r.updated_at
+          }));
+          const legacyRes = await this.client.from('planner_blocks').upsert(legacyChunk);
+          error = legacyRes.error;
+        }
+
         if (error) console.error('[Supabase] batchUpsertBlocks error:', error);
       }
       this.setStatus('connected');
