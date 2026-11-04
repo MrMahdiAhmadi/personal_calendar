@@ -230,6 +230,103 @@ function promptDeleteTemplate(templateId) {
   );
 }
 
+function promptClearLocalStore() {
+  showConfirmDialog(
+    I18N.t('confirm_clear_local_store_title'),
+    I18N.t('confirm_clear_local_store_msg'),
+    () => {
+      // 1. Remove all planner keys from localStorage
+      const plannerKeys = [
+        CONFIG.STORAGE_KEY,
+        CONFIG.TAGS_KEY,
+        CONFIG.TASKS_BANK_KEY,
+        CONFIG.TEMPLATES_KEY,
+        CONFIG.DELETED_TASKS_KEY,
+        CONFIG.SETTINGS_KEY,
+        CONFIG.HIDE_BREAKS_KEY,
+        CONFIG.VIEW_KEY,
+        CONFIG.THEME_KEY
+      ];
+
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          plannerKeys.forEach(k => {
+            if (k) window.localStorage.removeItem(k);
+          });
+        }
+      } catch (e) {
+        console.warn('localStorage clear error:', e);
+      }
+
+      // Clear memory store in SafeStorage
+      if (typeof SafeStorage !== 'undefined' && SafeStorage.memoryStore) {
+        SafeStorage.memoryStore = {};
+      }
+
+      // 2. Reset in-memory state variables to defaults
+      weeksData = {};
+      customTags = (typeof DEFAULT_TAGS !== 'undefined') ? JSON.parse(JSON.stringify(DEFAULT_TAGS)) : [];
+      sharedTasksBank = (typeof DEFAULT_TASK_BANK !== 'undefined') ? JSON.parse(JSON.stringify(DEFAULT_TASK_BANK)) : [];
+      weeklyTemplates = [];
+      hideBreaks = false;
+
+      // 3. Reset AppSettings to default settings
+      if (typeof AppSettings !== 'undefined' && typeof DEFAULT_SETTINGS !== 'undefined') {
+        AppSettings._data = { ...DEFAULT_SETTINGS };
+      }
+
+      // 4. Rebuild schedule metadata
+      if (typeof generateScheduleDefinition === 'function') {
+        SCHEDULE_METADATA = generateScheduleDefinition(
+          DEFAULT_SETTINGS.workBlockMins,
+          DEFAULT_SETTINGS.breakBlockMins,
+          DEFAULT_SETTINGS.bedtime,
+          DEFAULT_SETTINGS.wakeTime
+        );
+      }
+
+      // 5. Ensure current week structure and re-render everything
+      const curWeekKey = getWeekKey(weekOffset);
+      ensureWeekStructure(curWeekKey);
+
+      if (typeof renderDayTabs === 'function') renderDayTabs();
+      if (typeof populateTagsDropdowns === 'function') populateTagsDropdowns();
+      if (typeof renderCustomTagsList === 'function') renderCustomTagsList();
+      if (typeof renderTasksHubFilterTabs === 'function') renderTasksHubFilterTabs();
+      if (typeof renderTasksHubList === 'function') renderTasksHubList();
+      if (typeof renderTemplatesList === 'function') renderTemplatesList();
+      if (typeof renderCurrentView === 'function') renderCurrentView();
+      if (typeof updateCompletionCounters === 'function') updateCompletionCounters();
+      if (typeof updateLiveIranTicker === 'function') updateLiveIranTicker();
+
+      closeSettingsModal();
+      showToast(I18N.t('toast_local_store_cleared'));
+    }
+  );
+}
+
+function promptClearCloudDatabase() {
+  if (!SupabaseSync.isConfigured) {
+    showToast(I18N.t('toast_supabase_db_not_connected'));
+    return;
+  }
+
+  showConfirmDialog(
+    I18N.t('confirm_clear_supabase_db_title'),
+    I18N.t('confirm_clear_supabase_db_msg'),
+    async () => {
+      try {
+        showToast(I18N.t('toast_cloud_uploading'));
+        await SupabaseSync.clearAllCloudData();
+        showToast(I18N.t('toast_supabase_db_cleared'));
+      } catch (err) {
+        console.error('Failed to clean cloud database:', err);
+        showToast('Error cleaning cloud database: ' + (err.message || 'Unknown error'));
+      }
+    }
+  );
+}
+
 function renderTemplatesList() {
   const container = document.getElementById('templatesListContainer');
   const countEl = document.getElementById('savedTemplatesCount');

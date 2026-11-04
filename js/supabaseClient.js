@@ -471,6 +471,57 @@ const SupabaseSync = {
     }
   },
 
+  // Purge/wipe all planner tables in Supabase cloud database
+  async clearAllCloudData() {
+    if (!this.isConfigured || !this.client) {
+      throw new Error('Supabase client is not configured.');
+    }
+    this.setStatus('syncing');
+    try {
+      // 1. Delete all planner_blocks (using not-null filter for week_key)
+      try {
+        await this.client.from('planner_blocks').delete().neq('week_key', '');
+      } catch (err) {
+        console.warn('[Supabase] clear blocks error:', err);
+      }
+
+      // 2. Delete all planner_tasks
+      try {
+        await this.client.from('planner_tasks').delete().neq('id', '');
+      } catch (err) {
+        console.warn('[Supabase] clear tasks error:', err);
+      }
+
+      // 3. Delete all planner_templates
+      try {
+        await this.client.from('planner_templates').delete().neq('id', '');
+      } catch (err) {
+        console.warn('[Supabase] clear templates error:', err);
+      }
+
+      // 4. Delete all planner_settings
+      try {
+        await this.client.from('planner_settings').delete().neq('key', '');
+      } catch (err) {
+        console.warn('[Supabase] clear settings error:', err);
+      }
+
+      // 5. Delete all planner_tags (after tasks referencing them are deleted)
+      try {
+        await this.client.from('planner_tags').delete().neq('id', '');
+      } catch (err) {
+        console.warn('[Supabase] clear tags error:', err);
+      }
+
+      this.setStatus('connected');
+      return true;
+    } catch (err) {
+      this.setStatus('error');
+      console.error('[Supabase] clearAllCloudData error:', err);
+      throw err;
+    }
+  },
+
   // 4. Settings Operations (with planner_settings table & planner_blocks fallback)
   async fetchSettings() {
     if (!this.isConfigured || !this.client) return null;
