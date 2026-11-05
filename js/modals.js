@@ -632,7 +632,7 @@ function openSettingsModal(defaultTab = 'preferences') {
   }
 
   if (customTzInput) {
-    customTzInput.value = isCustomTz ? currentTz : 'Asia/Tehran';
+    customTzInput.value = isCustomTz ? currentTz : ((typeof AppSettings !== 'undefined' && AppSettings.getTimezone) ? AppSettings.getTimezone() : 'UTC');
   }
 
   if (tzError) {

@@ -59,11 +59,11 @@ const AppSettings = {
 
   getTimezone() {
     const tz = this._data.timezone;
-    if (tz === 'system') {
+    if (!tz || tz === 'system') {
       try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tehran';
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
       } catch (e) {
-        return 'Asia/Tehran';
+        return 'UTC';
       }
     }
     return tz;

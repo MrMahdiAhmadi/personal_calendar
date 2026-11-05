@@ -6,7 +6,7 @@ function getCurrentTime() {
   const now = new Date();
   const timeZone = (typeof AppSettings !== 'undefined' && AppSettings.getTimezone)
     ? AppSettings.getTimezone()
-    : 'Asia/Tehran';
+    : (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
 
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone,
@@ -33,7 +33,8 @@ function getCurrentTime() {
     'Sat': 'sat', 'Sun': 'sun', 'Mon': 'mon',
     'Tue': 'tue', 'Wed': 'wed', 'Thu': 'thu', 'Fri': 'fri'
   };
-  const todayIranDayId = mapWeekDay[vals.weekday] || 'sat';
+  const todayDayId = mapWeekDay[vals.weekday] || 'sat';
+  const todayIranDayId = todayDayId; // alias for backwards compatibility
 
   const persianFormatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
     timeZone,
@@ -63,7 +64,9 @@ function getCurrentTime() {
     persianDateStr,
     gregorianDateStr,
     englishDateStr: gregorianDateStr, // alias for backwards compatibility
-    todayIranDayId
+    todayDayId,
+    todayIranDayId,
+    timeZone
   };
 }
 
@@ -72,11 +75,26 @@ function getIranTime() {
   return getCurrentTime();
 }
 
+function updateTimezoneBadge() {
+  const badge = document.getElementById('headerTimezoneBadge');
+  if (!badge) return;
+
+  const activeTz = (typeof AppSettings !== 'undefined' && AppSettings.getTimezone)
+    ? AppSettings.getTimezone()
+    : (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+
+  if (typeof I18N !== 'undefined' && I18N.t) {
+    badge.textContent = I18N.t('tz_badge', { tz: activeTz });
+  } else {
+    badge.textContent = `Timezone: ${activeTz}`;
+  }
+}
+
 function getWeekKey(offset) {
   const now = new Date();
   const timeZone = (typeof AppSettings !== 'undefined' && AppSettings.getTimezone)
     ? AppSettings.getTimezone()
-    : 'Asia/Tehran';
+    : (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
 
   const shifted = new Date(now.getTime() + (offset * 7 * 24 * 60 * 60 * 1000));
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -105,6 +123,9 @@ function updateLiveIranTicker() {
   const timeEl = document.getElementById('iranLiveTime');
   const dateEl = document.getElementById('iranLiveDate');
   const isPersian = typeof AppSettings !== 'undefined' && AppSettings.get('calendarType') === 'persian';
+
+  // Ensure header timezone badge is updated with the active timezone
+  updateTimezoneBadge();
 
   if (timeEl) timeEl.textContent = currentTime.timeString;
   if (dateEl) dateEl.textContent = isPersian ? currentTime.persianDateStr : currentTime.gregorianDateStr;

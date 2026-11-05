@@ -10,8 +10,8 @@ const I18N = {
     en: {
       app_title: "24-Hour Time Blocking Planner",
       app_subtitle: "Weekly ultradian cycle planner (90m work / 30m break) with shared task bank",
-      tz_badge: "Iran Timezone (Asia/Tehran)",
-      live_time_fetching: "Fetching Iran time...",
+      tz_badge: "Timezone: {tz}",
+      live_time_fetching: "Fetching current time...",
       cloud_local: "Local Storage",
       cloud_connected: "Cloud (Connected)",
       cloud_syncing: "Syncing...",
@@ -147,7 +147,7 @@ const I18N = {
       view_daily_horizontal: "Daily (Horizontal)",
 
       // Active Banner
-      active_block_label: "Active Block (Iran Time)",
+      active_block_label: "Active Block",
       active_now_badge: "NOW",
       calculating_time: "Calculating time...",
       completed_today: "Today:",
@@ -331,8 +331,8 @@ const I18N = {
     fa: {
       app_title: "پلنر هفتگی بلاک‌بندی ۲۴ ساعته",
       app_subtitle: "برنامه‌ریزی شنبه تا جمعه با بانک تسک مشترک بر اساس هر تگ",
-      tz_badge: "تایم‌زون ایران (Asia/Tehran)",
-      live_time_fetching: "در حال دریافت زمان ایران...",
+      tz_badge: "منطقه زمانی: {tz}",
+      live_time_fetching: "در حال دریافت زمان...",
       cloud_local: "محلی (لوکال)",
       cloud_connected: "ابری (متصل)",
       cloud_syncing: "همگام‌سازی...",
@@ -344,7 +344,7 @@ const I18N = {
       show_breaks_btn: "نمایش مجدد استراحت‌ها",
       tags_btn: "برچسب‌ها",
       backup_btn: "پشتیبان‌گیری و انتقال داده",
-      jump_active_btn: "پرش به بلاک فعال در ایران",
+      jump_active_btn: "پرش به بلاک فعال",
       reset_btn: "حذف و پاکسازی دیتا",
       theme_btn: "تغییر تم رنگی",
       lang_switch_btn: "English",
@@ -468,7 +468,7 @@ const I18N = {
       view_daily_horizontal: "روزانه (افقی)",
 
       // Active Banner
-      active_block_label: "بلاک فعال بر اساس ساعت ایران",
+      active_block_label: "بلاک فعال",
       active_now_badge: "اکنون",
       calculating_time: "در حال محاسبه زمان...",
       completed_today: "تکمیل شده امروز:",
@@ -700,6 +700,7 @@ const I18N = {
     if (typeof renderCurrentView === 'function') renderCurrentView();
     if (typeof updateHideBreaksUI === 'function') updateHideBreaksUI();
     if (typeof updateLiveIranTicker === 'function') updateLiveIranTicker();
+    if (typeof updateTimezoneBadge === 'function') updateTimezoneBadge();
   },
 
   applyLanguage(lang) {
@@ -727,6 +728,11 @@ const I18N = {
     const switchBtn = document.getElementById('langSwitchLabel');
     if (switchBtn) {
       switchBtn.textContent = lang === 'en' ? 'فارسی' : 'English';
+    }
+
+    // Update header timezone badge
+    if (typeof updateTimezoneBadge === 'function') {
+      updateTimezoneBadge();
     }
 
     // Update Auto-Sync interval options dynamically
