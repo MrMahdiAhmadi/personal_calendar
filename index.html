@@ -63,8 +63,8 @@
               <h1 class="text-sm sm:text-base lg:text-lg font-bold tracking-tight text-slate-900 dark:text-white truncate" data-i18n="app_title">
                 24-Hour Time Blocking Planner
               </h1>
-              <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex-shrink-0" data-i18n="tz_badge">
-                Iran Timezone (Asia/Tehran)
+              <span id="headerTimezoneBadge" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex-shrink-0">
+                Timezone: --
               </span>
             </div>
             <p class="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5" data-i18n="app_subtitle">
@@ -75,7 +75,7 @@
 
         <!-- Mobile-Visible Controls (Clock & Primary Actions) -->
         <div class="flex items-center gap-1.5 flex-shrink-0">
-          <!-- Live Iran Clock Display -->
+          <!-- Live Clock Display -->
           <div class="flex items-center bg-slate-100 dark:bg-slate-800/80 px-2 sm:px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-inner">
             <div class="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-mono font-bold text-xs sm:text-sm">
               <span class="relative flex h-2 w-2">
@@ -86,7 +86,7 @@
             </div>
             <div class="hidden sm:block w-px h-3.5 bg-slate-300 dark:bg-slate-700 mx-2"></div>
             <div class="hidden sm:block text-[11px] text-slate-600 dark:text-slate-300 font-medium" id="iranLiveDate" data-i18n="live_time_fetching">
-              Fetching Iran time...
+              Fetching current time...
             </div>
           </div>
 
@@ -96,7 +96,7 @@
           </button>
 
           <!-- Jump to Active Block (Mobile & Desktop) -->
-          <button id="jumpCurrentBtn" title="Jump to Active Block in Iran" data-i18n-title="jump_active_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
+          <button id="jumpCurrentBtn" title="Jump to Active Block" data-i18n-title="jump_active_btn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition min-w-[38px] min-h-[38px] flex items-center justify-center">
             <i data-lucide="crosshair" class="w-4 h-4"></i>
           </button>
 
@@ -220,7 +220,7 @@
     </div>
   </section>
 
-  <!-- Iran Live Active Block Status Banner -->
+  <!-- Live Active Block Status Banner -->
   <section class="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 lg:px-8 py-3">
     <div class="bg-gradient-to-r from-indigo-500/10 via-purple-500/5 to-transparent dark:from-indigo-950/40 dark:via-purple-950/20 border border-indigo-200/50 dark:border-indigo-800/50 rounded-2xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
       <div class="flex items-center gap-3">
@@ -228,7 +228,7 @@
           <i data-lucide="activity" class="w-4 h-4"></i>
         </span>
         <div>
-          <div class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold" data-i18n="active_block_label">Active Block (Iran Time)</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold" data-i18n="active_block_label">Active Block</div>
           <div id="activeBlockBadge" class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mt-0.5" data-i18n="calculating_time">
             Calculating time...
           </div>

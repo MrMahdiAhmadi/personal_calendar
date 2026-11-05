@@ -89,7 +89,8 @@ window.addEventListener('DOMContentLoaded', () => {
     syncFromSupabase();
   }
 
-  // 5. Live Iran Clock
+  // 5. Live Clock & Timezone Badge
+  updateLiveIranTicker();
   setInterval(updateLiveIranTicker, 1000);
 
   // Network Online / Offline Status Listener
@@ -223,7 +224,9 @@ window.addEventListener('DOMContentLoaded', () => {
       const tzError = document.getElementById('settingsTzError');
       if (radio.value === 'custom') {
         if (customTzContainer) customTzContainer.classList.remove('hidden');
-        if (customTzInput && !customTzInput.value) customTzInput.value = 'Asia/Tehran';
+        if (customTzInput && !customTzInput.value) {
+          customTzInput.value = (typeof AppSettings !== 'undefined' && AppSettings.getTimezone) ? AppSettings.getTimezone() : 'UTC';
+        }
       } else {
         if (customTzContainer) customTzContainer.classList.add('hidden');
         if (tzError) tzError.classList.add('hidden');
